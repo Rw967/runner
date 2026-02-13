@@ -2,22 +2,34 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>ULTRA RUNNER - 10 Min Launch</title>
+    <title>ULTRA RUNNER - Secured Launch</title>
     <style>
         :root { --primary: #3b82f6; --accent: #ec4899; --bg: #020617; --danger: #ef4444; }
         
-        /* Schutz: Markieren und Ziehen verhindern */
+        /* RADIKALER KOPIERSCHUTZ PER CSS */
         * {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-user-drag: none;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-user-drag: none !important;
+            outline: none !important;
         }
 
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; cursor: wait; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: var(--bg); 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            color: white; 
+            cursor: wait; 
+        }
+
         #bg-canvas { position: fixed; inset: 0; z-index: -1; }
-        
         #main-container { text-align: center; z-index: 100; transition: transform 4s cubic-bezier(0.6, 0, 0.4, 1), opacity 2s; }
         .launch-active { transform: translateY(-150vh); opacity: 0; }
 
@@ -59,21 +71,36 @@
     <div id="main-container">
         <div class="loader-ring"></div>
         <h1 id="status-title">Update is coming</h1>
-        <div id="timer">00h 10m 00s</div>
-        <div style="margin-top: 40px; font-size: 11px; opacity: 0.3; letter-spacing: 3px;">PROTECTED SYSTEM V2.0.4</div>
+        <div id="timer">Lädt Zeit...</div>
+        <div style="margin-top: 40px; font-size: 11px; opacity: 0.3; letter-spacing: 3px;">ENCRYPTED SYSTEM V2.0.4</div>
     </div>
 
     <div id="launch-msg">Update is Loading...</div>
 
     <script>
-        // Schutzfunktionen
-        document.addEventListener('contextmenu', event => event.preventDefault());
+        // --- MAXIMUM SECURITY SCRIPTS ---
+
+        // Blockiert Rechtsklick
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Blockiert Auswahl/Markieren/Kopieren
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('mousedown', e => { if (e.detail > 1) e.preventDefault(); }, false); // Blockiert Doppel- & Dreifachklick
+        document.addEventListener('copy', e => e.preventDefault());
+
+        // Blockiert Tastenkombinationen für Entwicklertools
         document.onkeydown = function(e) {
-            if (e.keyCode == 123) return false; // F12
-            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) return false;
-            if (e.ctrlKey && e.keyCode == 85) return false; // Strg+U
+            // F12, Strg+U, Strg+Shift+I/J/C
+            if (e.keyCode == 123 || 
+                (e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'S'.charCodeAt(0))) ||
+                (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0)))) {
+                return false;
+            }
+            // Admin-Key
             if (e.altKey && e.key.toLowerCase() === 'm') triggerLaunch();
         };
+
+        // --- GAME LAUNCH LOGIC ---
 
         let starSpeed = 0.45;
         let isLaunching = false;
@@ -110,8 +137,8 @@
         function updateTimer() {
             if(isLaunching) return;
             const target = new Date();
-            // --- ZIELZEIT: 23:29 UHR (Genau 10 Min ab 23:19) ---
-            target.setHours(23, 29, 0, 0); 
+            // ZIELZEIT: 23:35 UHR (ca. 10 Min Puffer)
+            target.setHours(23, 35, 0, 0); 
             
             const now = new Date();
             const diff = target - now;
@@ -131,40 +158,27 @@
         setInterval(updateTimer, 1000);
         updateTimer();
 
+        // CANVAS LOGIK
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
-
         function init() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             particles = [];
             for(let i=0; i<110; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    s: Math.random() * 2 + 1,
-                    type: Math.random() > 0.75 ? 'wall' : 'cube'
-                });
+                particles.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2+1, type: Math.random()>0.75?'wall':'cube'});
             }
         }
-
         function draw() {
-            ctx.fillStyle = "#020617";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#020617"; ctx.fillRect(0,0,canvas.width,canvas.height);
             particles.forEach(p => {
-                p.y += p.s * starSpeed;
-                if(p.y > canvas.height) { p.y = -100; p.x = Math.random() * canvas.width; }
+                p.y += p.s * starSpeed; if(p.y > canvas.height) { p.y = -100; p.x = Math.random()*canvas.width; }
                 if(hyperspaceMode) {
                     ctx.fillStyle = p.type === 'cube' ? "#3b82f6" : "#ef4444";
-                    if(p.type === 'cube') {
-                        ctx.fillRect(p.x, p.y, 14, 14);
-                        ctx.strokeStyle = "white"; ctx.strokeRect(p.x, p.y, 14, 14);
-                    } else { ctx.fillRect(p.x, p.y, 7, 50); }
-                } else if(isLaunching) {
-                    ctx.fillStyle = "white"; ctx.fillRect(p.x, p.y, 1, p.s * 40);
-                } else {
-                    ctx.fillStyle = "white"; ctx.fillRect(p.x, p.y, p.s, p.s);
-                }
+                    if(p.type === 'cube') { ctx.fillRect(p.x, p.y, 14, 14); ctx.strokeStyle = "white"; ctx.strokeRect(p.x, p.y, 14, 14); }
+                    else { ctx.fillRect(p.x, p.y, 7, 50); }
+                } else if(isLaunching) { ctx.fillStyle="white"; ctx.fillRect(p.x, p.y, 1, p.s*40); }
+                else { ctx.fillStyle="white"; ctx.fillRect(p.x, p.y, p.s, p.s); }
             });
             requestAnimationFrame(draw);
         }
