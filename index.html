@@ -2,187 +2,400 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>ULTRA RUNNER - Secured Launch</title>
+    <title>ULTRA RUNNER - Final Edition</title>
     <style>
-        :root { --primary: #3b82f6; --accent: #ec4899; --bg: #020617; --danger: #ef4444; }
-        
-        /* RADIKALER KOPIERSCHUTZ PER CSS */
-        * {
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            user-select: none !important;
-            -webkit-user-drag: none !important;
-            outline: none !important;
+        :root {
+            --primary: #3b82f6;
+            --accent: #ec4899;
+            --gold: #fbbf24;
+            --bg: #020617;
         }
 
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: var(--bg); 
-            font-family: 'Segoe UI', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            color: white; 
-            cursor: wait; 
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            user-select: none;
         }
 
-        #bg-canvas { position: fixed; inset: 0; z-index: -1; }
-        #main-container { text-align: center; z-index: 100; transition: transform 4s cubic-bezier(0.6, 0, 0.4, 1), opacity 2s; }
-        .launch-active { transform: translateY(-150vh); opacity: 0; }
-
-        .loader-ring { 
-            width: 120px; height: 120px; border: 4px solid rgba(255, 255, 255, 0.05); 
-            border-top: 4px solid var(--accent); border-bottom: 4px solid var(--primary); 
-            border-radius: 50%; margin: 0 auto 30px; animation: spin 1.2s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        h1 { font-size: 42px; margin: 0; letter-spacing: 10px; text-transform: uppercase; background: linear-gradient(90deg, #fff, var(--primary), #fff); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite; }
-        @keyframes shine { to { background-position: 200% center; } }
-
-        #timer { margin-top: 25px; font-size: 28px; letter-spacing: 5px; font-weight: 300; }
-        
-        #launch-msg { 
-            position: fixed; top: 40%; width: 100%; text-align: center; 
-            font-size: 24px; letter-spacing: 12px; opacity: 0; 
-            transition: opacity 3s; pointer-events: none; 
-            text-transform: uppercase; font-weight: 900; 
-            color: var(--primary); text-shadow: 0 0 25px var(--primary);
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
         }
 
-        .mode-drop {
-            position: fixed; left: 50%; transform: translateX(-50%);
-            font-size: 45px; font-weight: 900; letter-spacing: 15px;
-            color: rgba(255,255,255,0.12); text-transform: uppercase;
-            white-space: nowrap; z-index: 10; pointer-events: none;
-            border-top: 2px solid rgba(59, 130, 246, 0.2);
-            border-bottom: 2px solid rgba(59, 130, 246, 0.2);
-            padding: 20px;
+        #game-container {
+            position: relative;
+            width: 950px;
+            height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
+            background: #1e293b;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .ui-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+
+        h1 {
+            font-size: 38px;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #3b82f6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #3b82f6;
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin: 6px 0;
+            font-weight: bold;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+            .menu-btn:hover {
+                background: #3b82f6;
+                transform: scale(1.02);
+            }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border: 1px solid #3b82f6;
+            background: rgba(0,0,0,0.4);
+            color: white;
+            text-align: center;
+            font-size: 18px;
+            outline: none;
+        }
+
+        /* HUD & Ranking */
+        #global-leaderboard {
+            position: absolute;
+            right: 15px;
+            top: 60px;
+            width: 170px;
+            background: rgba(0,0,0,0.7);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--gold);
+            z-index: 50;
+        }
+
+        .rank-entry {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .is-me {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        #hud {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            pointer-events: none;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        /* Home Button oben links */
+        #home-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 150;
+            transition: 0.2s;
+        }
+
+            #home-btn:hover {
+                background: #3b82f6;
+            }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
     <canvas id="bg-canvas"></canvas>
-    
-    <div id="main-container">
-        <div class="loader-ring"></div>
-        <h1 id="status-title">Update is coming</h1>
-        <div id="timer">Lädt Zeit...</div>
-        <div style="margin-top: 40px; font-size: 11px; opacity: 0.3; letter-spacing: 3px;">ENCRYPTED SYSTEM V2.0.4</div>
+
+    <div id="game-container">
+        <div id="home-btn" class="hidden" onclick="exitToMenu()">🏠</div>
+
+        <div id="hud" class="hidden">
+            <div>SCORE: <span id="scoreVal">0</span></div>
+            <div id="timerBox" class="hidden">TIME: <span id="timeVal">40</span>s</div>
+            <div id="modeNameHUD" style="color:var(--accent)">NORMAL</div>
+        </div>
+
+        <div id="global-leaderboard" class="hidden">
+            <div style="text-align:center; color:var(--gold); font-size:10px; margin-bottom:5px;">🏆 WELT-RANKING</div>
+            <div id="leaderRows"></div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="screen-name" class="ui-screen">
+            <div class="panel">
+                <h1>PLAYER LOGIN</h1>
+                <input type="text" id="nameInput" placeholder="Name eingeben..." maxlength="12">
+                <p id="errorMsg" style="color: #ff4d4d; font-size: 12px; height: 15px;"></p>
+                <button class="menu-btn" onclick="validateUser()">STARTEN</button>
+            </div>
+        </div>
+
+        <div id="screen-main" class="ui-screen hidden">
+            <div class="panel">
+                <h1>ULTRA RUNNER</h1>
+                <button class="menu-btn" onclick="startDuel()" style="border-color: var(--accent);">ZUFÄLLIGES DUELL (Online)</button>
+                <button class="menu-btn" onclick="showScreen('screen-modes')">OFFLINE MODI</button>
+                <button class="menu-btn" onclick="showScreen('screen-settings')">EINSTELLUNGEN</button>
+                <button class="menu-btn" onclick="showScreen('screen-name')">NAME ÄNDERN</button>
+            </div>
+        </div>
+
+        <div id="screen-settings" class="ui-screen hidden">
+            <div class="panel">
+                <h1>SETTINGS</h1>
+                <button class="menu-btn" id="partikelToggle" onclick="toggleParticles()">PARTIKEL: AN</button>
+                <p style="font-size: 11px; color: #94a3b8;">Schalte Partikel aus, falls es ruckelt.</p>
+                <button class="menu-btn" onclick="showScreen('screen-main')">ZURÜCK</button>
+            </div>
+        </div>
+
+        <div id="screen-modes" class="ui-screen hidden">
+            <div class="panel">
+                <h1>MODI</h1>
+                <button class="menu-btn" onclick="initGame('normal')">NORMAL</button>
+                <button class="menu-btn" onclick="initGame('hardcore')">HARDCORE</button>
+                <button class="menu-btn" onclick="initGame('moon')">MOON</button>
+                <button class="menu-btn" onclick="initGame('speedrun')">SPEEDRUN (40s)</button>
+                <button class="menu-btn" onclick="showScreen('screen-main')">ZURÜCK</button>
+            </div>
+        </div>
+
+        <div id="screen-over" class="ui-screen hidden">
+            <div class="panel">
+                <h1 style="color:var(--accent)">CRASH!</h1>
+                <p style="font-size:24px;">Dein Score: <span id="lastScore">0</span></p>
+                <button class="menu-btn" onclick="retryGame()">NOCHMAL</button>
+                <button class="menu-btn" onclick="showScreen('screen-main')">MENÜ</button>
+            </div>
+        </div>
     </div>
 
-    <div id="launch-msg">Update is Loading...</div>
-
     <script>
-        // --- MAXIMUM SECURITY SCRIPTS ---
-
-        // Blockiert Rechtsklick
-        document.addEventListener('contextmenu', e => e.preventDefault());
-
-        // Blockiert Auswahl/Markieren/Kopieren
-        document.addEventListener('selectstart', e => e.preventDefault());
-        document.addEventListener('mousedown', e => { if (e.detail > 1) e.preventDefault(); }, false); // Blockiert Doppel- & Dreifachklick
-        document.addEventListener('copy', e => e.preventDefault());
-
-        // Blockiert Tastenkombinationen für Entwicklertools
-        document.onkeydown = function(e) {
-            // F12, Strg+U, Strg+Shift+I/J/C
-            if (e.keyCode == 123 || 
-                (e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'S'.charCodeAt(0))) ||
-                (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0)))) {
-                return false;
-            }
-            // Admin-Key
-            if (e.altKey && e.key.toLowerCase() === 'm') triggerLaunch();
-        };
-
-        // --- GAME LAUNCH LOGIC ---
-
-        let starSpeed = 0.45;
-        let isLaunching = false;
-        let hyperspaceMode = false;
-        const realFeatures = ["ONLINE MODUS", "NAME EINGEBEN", "NEUE ARENA", "GLOBAL RANKING", "MULTIPLAYER"];
-
-        function spawnFeatureText() {
-            if(!isLaunching) return;
-            const ft = document.createElement('div');
-            ft.className = 'mode-drop';
-            ft.innerText = realFeatures[Math.floor(Math.random() * realFeatures.length)];
-            ft.style.top = "-250px";
-            document.body.appendChild(ft);
-            let y = -250;
-            const fall = setInterval(() => {
-                y += 1.3; ft.style.top = y + "px";
-                if(y > window.innerHeight + 250) { clearInterval(fall); ft.remove(); }
-            }, 20);
-        }
-
-        function triggerLaunch() {
-            if(isLaunching) return;
-            isLaunching = true;
-            document.getElementById('main-container').classList.add('launch-active');
-            setTimeout(() => { document.getElementById('launch-msg').style.opacity = "1"; }, 2500);
-            starSpeed = 28;
-            setTimeout(() => {
-                hyperspaceMode = true; 
-                setInterval(spawnFeatureText, 8000);
-                spawnFeatureText();
-            }, 2000);
-        }
-
-        function updateTimer() {
-            if(isLaunching) return;
-            const target = new Date();
-            // ZIELZEIT: 23:35 UHR (ca. 10 Min Puffer)
-            target.setHours(23, 35, 0, 0); 
-            
-            const now = new Date();
-            const diff = target - now;
-            
-            if (diff <= 0) {
-                triggerLaunch();
-                document.getElementById('timer').innerText = "00h 00m 00s";
-                return;
-            }
-
-            const h = Math.floor(diff/3600000).toString().padStart(2,'0');
-            const m = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
-            const s = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
-            document.getElementById('timer').innerText = `${h}h ${m}m ${s}s`;
-        }
-        
-        setInterval(updateTimer, 1000);
-        updateTimer();
-
-        // CANVAS LOGIK
-        const canvas = document.getElementById('bg-canvas');
+        const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let particles = [];
-        function init() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            particles = [];
-            for(let i=0; i<110; i++) {
-                particles.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2+1, type: Math.random()>0.75?'wall':'cube'});
-            }
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bctx = bgCanvas.getContext('2d');
+        canvas.width = 950; canvas.height = 500;
+
+        let userName = "";
+        let particlesEnabled = true;
+        const blacklist = ["neger", "bastard", "hurensohn", "ficker", "nazi", "hitler", "wichser", "arsch"];
+        let worldScores = [{n: "Luca", s: 1400}, {n: "Alex", s: 420}, {n: "Justin", s: 310}, {n: "Sarah", s: 150}];
+        let currentLobby = [];
+
+        function validateUser() {
+        const val = document.getElementById('nameInput').value.trim();
+        const isBad = blacklist.some(w => val.toLowerCase().includes(w));
+        if(isBad) {
+        document.getElementById('errorMsg').innerText = "Spielername nicht möglich, bitte probieren Sie einen anderen Spielernamen.";
+        } else if(val.length < 2) {
+        document.getElementById('errorMsg').innerText = "Name zu kurz!";
+        } else {
+        userName = val;
+        showScreen('screen-main');
         }
-        function draw() {
-            ctx.fillStyle = "#020617"; ctx.fillRect(0,0,canvas.width,canvas.height);
-            particles.forEach(p => {
-                p.y += p.s * starSpeed; if(p.y > canvas.height) { p.y = -100; p.x = Math.random()*canvas.width; }
-                if(hyperspaceMode) {
-                    ctx.fillStyle = p.type === 'cube' ? "#3b82f6" : "#ef4444";
-                    if(p.type === 'cube') { ctx.fillRect(p.x, p.y, 14, 14); ctx.strokeStyle = "white"; ctx.strokeRect(p.x, p.y, 14, 14); }
-                    else { ctx.fillRect(p.x, p.y, 7, 50); }
-                } else if(isLaunching) { ctx.fillStyle="white"; ctx.fillRect(p.x, p.y, 1, p.s*40); }
-                else { ctx.fillStyle="white"; ctx.fillRect(p.x, p.y, p.s, p.s); }
-            });
-            requestAnimationFrame(draw);
         }
-        window.onresize = init; init(); draw();
+
+        function toggleParticles() {
+        particlesEnabled = !particlesEnabled;
+        document.getElementById('partikelToggle').innerText = "PARTIKEL: " + (particlesEnabled ? "AN" : "AUS");
+        }
+
+        function exitToMenu() {
+        gameState = 'menu';
+        showScreen('screen-main');
+        }
+
+        function startDuel() {
+        currentLobby = [{n: userName, s: 0, me: true}, {n: "Alex Bot", s: 0, bot: true}, {n: "Sarah Bot", s: 0, bot: true}];
+        initGame('normal', true);
+        }
+
+        function showScreen(id) {
+        document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('global-leaderboard').classList.add('hidden');
+        document.getElementById('home-btn').classList.add('hidden');
+        }
+
+        // GAME ENGINE
+        let gameState = 'menu', score = 0, speed = 7, obstacles = [], time = 40;
+        let isPressing = false, jumpTimer = 0;
+        const player = { x: 100, y: 300, w: 45, h: 45, dy: 0, grav: 0.85 };
+
+        function initGame(mode, online = false) {
+        gameState = 'playing';
+        score = 0; time = 40;
+        speed = (mode === 'hardcore' ? 10.5 : 7.5);
+        obstacles = []; player.y = 300; player.dy = 0;
+        player.grav = (mode === 'moon' ? 0.35 : 0.85);
+
+        document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('hud').classList.remove('hidden');
+        document.getElementById('home-btn').classList.remove('hidden');
+        document.getElementById('global-leaderboard').classList.remove('hidden');
+        document.getElementById('modeNameHUD').innerText = mode.toUpperCase();
+        document.getElementById('timerBox').classList.toggle('hidden', mode !== 'speedrun');
+
+        updateRankings();
+        update();
+        }
+
+        function updateRankings() {
+        const container = document.getElementById('leaderRows');
+        currentLobby.forEach(p => {
+        if(p.bot) p.s += (Math.random() < 0.1 ? 1 : 0);
+        if(p.me) p.s = score;
+        });
+        let combined = [...worldScores, ...currentLobby.filter(p => !worldScores.find(w => w.n === p.n))];
+        combined.sort((a,b) => b.s - a.s);
+        container.innerHTML = combined.slice(0, 8).map((p, i) => `
+        <div class="rank-entry ${p.me ? 'is-me' : ''}">
+        <span>#${i+1} ${p.n}</span><span>${p.s}</span>
+        </div>
+        `).join('');
+        }
+
+        function update() {
+        if(gameState !== 'playing') return;
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+
+        // Timer für Speedrun
+        if(document.getElementById('modeNameHUD').innerText === 'SPEEDRUN') {
+        time -= 1/60;
+        document.getElementById('timeVal').innerText = Math.ceil(time);
+        if(time <= 0) gameOver();
+        }
+
+        // Jump & Physics
+        if(isPressing && jumpTimer > 0) { player.dy = -11.5; jumpTimer--; }
+        player.dy += player.grav; player.y += player.dy;
+        if(player.y > canvas.height - 85) { player.y = canvas.height - 85; player.dy = 0; player.onGround = true; } else player.onGround = false;
+
+        // Player
+        ctx.fillStyle = "#3b82f6"; ctx.shadowBlur = 10; ctx.shadowColor = "#3b82f6";
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+        ctx.shadowBlur = 0;
+
+        // Boden
+        ctx.fillStyle = "#334155"; ctx.fillRect(0, canvas.height-40, canvas.width, 40);
+
+        // Hindernisse
+        if(Math.random() < 0.02 && (obstacles.length === 0 || (canvas.width - obstacles[obstacles.length-1].x) > (speed * 42))) {
+        let h = 40 + Math.random()*85;
+        obstacles.push({x: canvas.width, y: canvas.height-40-h, w: 35, h: h});
+        }
+
+        obstacles.forEach((o, i) => {
+        o.x -= speed;
+        ctx.fillStyle = "#ef4444"; ctx.fillRect(o.x, o.y, o.w, o.h);
+        if(player.x < o.x + o.w && player.x + player.w > o.x && player.y < o.y + o.h && player.y + player.h > o.y) gameOver();
+        if(o.x < -40) { obstacles.splice(i,1); score++; speed += 0.012; document.getElementById('scoreVal').innerText = score; updateRankings(); }
+        });
+
+        requestAnimationFrame(update);
+        }
+
+        function gameOver() {
+        gameState = 'over';
+        showScreen('screen-over');
+        document.getElementById('lastScore').innerText = score;
+        }
+
+        function retryGame() { initGame(document.getElementById('modeNameHUD').innerText.toLowerCase()); }
+
+        // Controls
+        window.onmousedown = () => { if(player.onGround) { jumpTimer = 25; isPressing = true; } };
+        window.onmouseup = () => isPressing = false;
+        window.onkeydown = (e) => {
+        if(e.code === 'Space' && player.onGround) { jumpTimer = 25; isPressing = true; }
+        if(e.code === 'ControlLeft') player.dy = 22; // STURZFLUG
+        };
+        window.onkeyup = (e) => { if(e.code === 'Space') isPressing = false; };
+
+        // Hintergrund
+        let stars = [];
+        function initBg() {
+        bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+        stars = []; for(let i=0; i<80; i++) stars.push({x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height, s: Math.random()*1.5});
+        }
+        function drawBg() {
+        bctx.fillStyle = "#020617"; bctx.fillRect(0,0,bgCanvas.width, bgCanvas.height);
+        bctx.fillStyle = "white";
+        stars.forEach(s => { s.y += s.s * 0.1; if(s.y > bgCanvas.height) s.y = 0; bctx.fillRect(s.x, s.y, s.s, s.s); });
+        requestAnimationFrame(drawBg);
+        }
+        window.onresize = initBg; initBg(); drawBg();
     </script>
 </body>
 </html>
