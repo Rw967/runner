@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <title>ULTRA RUNNER - Maintenance</title>
     <style>
-        :root { --primary: #3b82f6; --accent: #ec4899; --bg: #020617; }
+        :root { --primary: #3b82f6; --accent: #ec4899; --bg: #020617; --danger: #ef4444; }
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; cursor: wait; }
-        #bg-canvas { position: fixed; inset: 0; z-index: -1; filter: blur(4px); }
+        #bg-canvas { position: fixed; inset: 0; z-index: -1; filter: blur(1px); }
         .update-box { text-align: center; z-index: 100; padding: 40px; }
         
         .loader-ring { 
@@ -16,84 +16,142 @@
             border-bottom: 4px solid var(--primary); 
             border-radius: 50%; margin: 0 auto 30px; 
             animation: spin 1.5s linear infinite;
-            box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        h1 { font-size: 36px; margin: 0; letter-spacing: 6px; text-transform: uppercase; background: linear-gradient(90deg, #fff, #3b82f6, #fff); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite; }
+        h1 { font-size: 38px; margin: 0; letter-spacing: 8px; text-transform: uppercase; background: linear-gradient(90deg, #fff, #3b82f6, #fff); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite; }
         @keyframes shine { to { background-position: 200% center; } }
 
-        .msg { color: #94a3b8; font-size: 14px; margin-top: 10px; letter-spacing: 3px; font-weight: bold; }
-        
-        /* Dein Countdown-Style */
-        #timer { 
-            margin-top: 25px; 
-            font-size: 22px; 
-            color: #fff; 
-            font-weight: 300; 
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        #timer { margin-top: 25px; font-size: 24px; letter-spacing: 4px; color: #fff; font-weight: 300; }
+
+        /* --- GAME TEASER ELEMENTE --- */
+        .game-teaser { position: fixed; left: -250px; z-index: 50; pointer-events: none; }
+        .player-cube { width: 40px; height: 40px; background: var(--primary); box-shadow: 0 0 20px var(--primary); border: 2px solid white; }
+        .hazard-wall { width: 30px; height: 85px; background: var(--danger); box-shadow: 0 0 25px var(--danger); }
+        .text-box { 
+            background: rgba(15, 23, 42, 0.9); border: 1px solid var(--primary);
+            padding: 10px 20px; white-space: nowrap; font-size: 12px; font-weight: bold;
+            letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 0 15px rgba(59,130,246,0.3);
         }
 
-        .overlay { position: fixed; inset: 0; z-index: 9999; background: transparent; }
+        /* Login Glitch Vorschau */
+        .login-glitch {
+            position: fixed; top: 75%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--accent);
+            padding: 20px; color: white; z-index: 200; opacity: 0;
+            animation: glitch-view 3.5s ease-in-out forwards;
+            text-align: center;
+        }
+        @keyframes glitch-view {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); filter: blur(10px); }
+            15% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+            85% { opacity: 1; filter: hue-rotate(0deg); }
+            100% { opacity: 0; transform: translate(-50%, -60%) scale(1.1); filter: blur(5px); }
+        }
+
+        .overlay { position: fixed; inset: 0; z-index: 9999; }
     </style>
 </head>
 <body>
     <div class="overlay"></div>
     <canvas id="bg-canvas"></canvas>
+    
     <div class="update-box">
         <div class="loader-ring"></div>
         <h1>Update is coming</h1>
-        <div class="msg">PLEASE WAIT</div>
-        
-        <div id="timer">Lädt Zeit...</div>
-
-        <div style="margin-top: 50px; font-size: 10px; color: #334155; letter-spacing: 1px;">V2.0.4 - SERVER MAINTENANCE MODE</div>
+        <div id="timer">Berechne Zeit...</div>
     </div>
 
     <script>
+        const teaserMessages = ["PLAYER LOGIN...", "ONLINE DUEL BEREIT", "NEW HIGHSCORE SYSTEM", "MAP: NEON CITY", "UPDATING ASSETS...", "V2.0.4 BOOTING"];
+
+        function spawnTeaser() {
+            const rand = Math.random();
+            const teaser = document.createElement('div');
+            teaser.className = 'game-teaser';
+            
+            if(rand < 0.3) {
+                teaser.classList.add('player-cube');
+            } else if(rand < 0.6) {
+                teaser.classList.add('hazard-wall');
+            } else {
+                teaser.classList.add('text-box');
+                teaser.innerText = teaserMessages[Math.floor(Math.random()*teaserMessages.length)];
+            }
+
+            teaser.style.top = (Math.random() * 75 + 10) + "%";
+            document.body.appendChild(teaser);
+
+            let pos = -250;
+            const speed = Math.random() * 1.5 + 1.2;
+            const move = setInterval(() => {
+                pos += speed;
+                teaser.style.left = pos + "px";
+                if(pos > window.innerWidth + 300) { clearInterval(move); teaser.remove(); }
+            }, 10);
+        }
+
+        function showLoginGlitch() {
+            const login = document.createElement('div');
+            login.className = 'login-glitch';
+            login.innerHTML = `<div style="font-size:9px; color:var(--accent); margin-bottom:5px;">[SYSTEM_PREVIEW]</div>
+                               <div style="letter-spacing:3px; font-weight:bold;">NAME EINGEBEN...</div>
+                               <div style="width:100%; height:2px; background:var(--accent); margin-top:8px; opacity:0.5;"></div>`;
+            document.body.appendChild(login);
+            setTimeout(() => { login.remove(); }, 3500);
+        }
+
+        // Alle 20 Sekunden würfeln
+        setInterval(() => {
+            spawnTeaser();
+            if(Math.random() > 0.6) setTimeout(showLoginGlitch, 5000);
+        }, 20000);
+
+        // Sofortstart
+        setTimeout(spawnTeaser, 2000);
+
         function updateTimer() {
             const now = new Date();
             const target = new Date();
             
-            // Zielzeit auf heute 22:45 Uhr setzen
-            target.setHours(22, 45, 0, 0);
+            // NEUE ZEIT: 23:05 Uhr (20 Min später als 22:45)
+            target.setHours(23, 5, 0, 0);
 
-            // Falls es schon nach 22:45 ist (für morgen)
-            if (now > target) {
-                document.getElementById('timer').innerText = "Update wird aufgespielt...";
+            const diff = target - now;
+
+            if (diff <= 0) {
+                document.getElementById('timer').innerText = "SYSTEM RESTART...";
                 return;
             }
 
-            const diff = target - now;
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+            const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+            const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
 
-            document.getElementById('timer').innerText = 
-                `${hours}h ${mins}m ${secs}s`;
+            document.getElementById('timer').innerText = `${h}h ${m}m ${s}s`;
         }
 
         setInterval(updateTimer, 1000);
         updateTimer();
 
-        // Hintergrund-Logik
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let stars = [];
         function init() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            stars = []; for(let i=0; i<80; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*1.5});
+            stars = []; for(let i=0; i<90; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*1.5 + 0.5});
         }
         function draw() {
             ctx.fillStyle = "#020617"; ctx.fillRect(0,0,canvas.width, canvas.height);
-            ctx.fillStyle = "white"; stars.forEach(s => { s.y += s.s * 0.05; if(s.y > canvas.height) s.y = 0; ctx.fillRect(s.x, s.y, s.s, s.s); });
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)"; 
+            stars.forEach(s => { 
+                s.y += s.s * 0.4; 
+                if(s.y > canvas.height) s.y = -10; 
+                ctx.fillRect(s.x, s.y, s.s, s.s); 
+            });
             requestAnimationFrame(draw);
         }
-        window.addEventListener('keydown', e => e.preventDefault());
-        window.oncontextmenu = () => false;
-        window.onresize = init;
-        init(); draw();
+        window.onresize = init; init(); draw();
     </script>
 </body>
 </html>
