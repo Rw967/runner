@@ -2,163 +2,98 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>ULTRA RUNNER - System Update</title>
+    <title>ULTRA RUNNER - Maintenance</title>
     <style>
         :root { --primary: #3b82f6; --accent: #ec4899; --bg: #020617; }
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: var(--bg); 
-            font-family: 'Segoe UI', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            color: white; 
-            cursor: wait; /* Zeigt die Sanduhr an */
-        }
-
-        #bg-canvas { position: fixed; inset: 0; z-index: -1; filter: blur(3px); }
-
-        .loading-container {
-            text-align: center;
-            z-index: 10;
-        }
-
-        /* Pulsierender Lade-Ring */
-        .ring {
-            width: 120px;
-            height: 120px;
-            border: 4px solid rgba(59, 130, 246, 0.1);
-            border-top: 4px solid var(--primary);
-            border-bottom: 4px solid var(--accent);
-            border-radius: 50%;
-            margin: 0 auto 30px;
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; cursor: wait; }
+        #bg-canvas { position: fixed; inset: 0; z-index: -1; filter: blur(4px); }
+        .update-box { text-align: center; z-index: 100; padding: 40px; }
+        
+        .loader-ring { 
+            width: 120px; height: 120px; 
+            border: 4px solid rgba(255, 255, 255, 0.1); 
+            border-top: 4px solid var(--accent); 
+            border-bottom: 4px solid var(--primary); 
+            border-radius: 50%; margin: 0 auto 30px; 
             animation: spin 1.5s linear infinite;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        h1 { font-size: 36px; margin: 0; letter-spacing: 6px; text-transform: uppercase; background: linear-gradient(90deg, #fff, #3b82f6, #fff); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite; }
+        @keyframes shine { to { background-position: 200% center; } }
 
-        h1 {
-            font-size: 28px;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            margin: 10px 0;
-            background: linear-gradient(90deg, #fff, #3b82f6, #fff);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 3s linear infinite;
-        }
-
-        @keyframes shine {
-            to { background-position: 200% center; }
-        }
-
-        p {
-            color: #64748b;
-            font-size: 14px;
+        .msg { color: #94a3b8; font-size: 14px; margin-top: 10px; letter-spacing: 3px; font-weight: bold; }
+        
+        /* Dein Countdown-Style */
+        #timer { 
+            margin-top: 25px; 
+            font-size: 22px; 
+            color: #fff; 
+            font-weight: 300; 
             letter-spacing: 2px;
-            margin-top: 5px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
 
-        /* Die absolute Sperre */
-        .blocker {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 9999;
-            background: transparent;
-        }
-
-        /* Kleiner pulsierender Punkt */
-        .dot-flashing {
-            display: inline-block;
-            position: relative;
-            width: 6px;
-            height: 6px;
-            border-radius: 5px;
-            background-color: var(--primary);
-            color: var(--primary);
-            animation: dot-flashing 1s infinite linear alternate;
-            margin-left: 10px;
-        }
-
-        @keyframes dot-flashing {
-            0% { background-color: var(--primary); }
-            50%, 100% { background-color: rgba(59, 130, 246, 0.2); }
-        }
+        .overlay { position: fixed; inset: 0; z-index: 9999; background: transparent; }
     </style>
 </head>
 <body>
+    <div class="overlay"></div>
+    <canvas id="bg-canvas"></canvas>
+    <div class="update-box">
+        <div class="loader-ring"></div>
+        <h1>Update is coming</h1>
+        <div class="msg">PLEASE WAIT</div>
+        
+        <div id="timer">Lädt Zeit...</div>
 
-<div class="blocker" id="blocker"></div>
-
-<canvas id="bg-canvas"></canvas>
-
-<div class="loading-container">
-    <div class="ring"></div>
-    <h1>Update is coming</h1>
-    <p>PLEASE WAIT<span class="dot-flashing"></span></p>
-    <div style="margin-top: 50px; font-size: 10px; color: #334155; letter-spacing: 1px;">
-        V2.0.4 - SERVER MAINTENANCE MODE
+        <div style="margin-top: 50px; font-size: 10px; color: #334155; letter-spacing: 1px;">V2.0.4 - SERVER MAINTENANCE MODE</div>
     </div>
-</div>
 
-<script>
-    // Hintergrund-Sterne damit es nicht langweilig ist
-    const bgCanvas = document.getElementById('bg-canvas');
-    const bctx = bgCanvas.getContext('2d');
-    let stars = [];
+    <script>
+        function updateTimer() {
+            const now = new Date();
+            const target = new Date();
+            
+            // Zielzeit auf heute 22:45 Uhr setzen
+            target.setHours(22, 45, 0, 0);
 
-    function init() {
-        bgCanvas.width = window.innerWidth;
-        bgCanvas.height = window.innerHeight;
-        stars = [];
-        for(let i=0; i<80; i++) {
-            stars.push({
-                x: Math.random() * bgCanvas.width,
-                y: Math.random() * bgCanvas.height,
-                s: Math.random() * 2
-            });
+            // Falls es schon nach 22:45 ist (für morgen)
+            if (now > target) {
+                document.getElementById('timer').innerText = "Update wird aufgespielt...";
+                return;
+            }
+
+            const diff = target - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('timer').innerText = 
+                `${hours}h ${mins}m ${secs}s`;
         }
-    }
 
-    function draw() {
-        bctx.fillStyle = "#020617";
-        bctx.fillRect(0,0,bgCanvas.width, bgCanvas.height);
-        bctx.fillStyle = "white";
-        stars.forEach(s => {
-            s.y += s.s * 0.1;
-            if(s.y > bgCanvas.height) s.y = 0;
-            bctx.beginPath();
-            bctx.arc(s.x, s.y, s.s/2, 0, Math.PI*2);
-            bctx.fill();
-        });
-        requestAnimationFrame(draw);
-    }
+        setInterval(updateTimer, 1000);
+        updateTimer();
 
-    // Deaktiviert alle Tastaturbefehle (F5, F12, etc. werden erschwert)
-    window.addEventListener('keydown', function (e) {
-        e.preventDefault();
-        return false;
-    });
-
-    // Verhindert Rechtsklick
-    window.oncontextmenu = function () {
-        return false;
-    }
-
-    window.onresize = init;
-    init();
-    draw();
-</script>
-
+        // Hintergrund-Logik
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        function init() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars = []; for(let i=0; i<80; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*1.5});
+        }
+        function draw() {
+            ctx.fillStyle = "#020617"; ctx.fillRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle = "white"; stars.forEach(s => { s.y += s.s * 0.05; if(s.y > canvas.height) s.y = 0; ctx.fillRect(s.x, s.y, s.s, s.s); });
+            requestAnimationFrame(draw);
+        }
+        window.addEventListener('keydown', e => e.preventDefault());
+        window.oncontextmenu = () => false;
+        window.onresize = init;
+        init(); draw();
+    </script>
 </body>
 </html>
