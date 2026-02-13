@@ -8,7 +8,6 @@
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; cursor: wait; }
         #bg-canvas { position: fixed; inset: 0; z-index: -1; }
         
-        /* Das Menü fliegt nach oben weg */
         #main-container { text-align: center; z-index: 100; transition: transform 4s cubic-bezier(0.6, 0, 0.4, 1), opacity 2s; }
         .launch-active { transform: translateY(-150vh); opacity: 0; }
 
@@ -24,16 +23,23 @@
 
         #timer { margin-top: 25px; font-size: 28px; letter-spacing: 5px; font-weight: 300; }
         
-        /* Die unendliche Nachricht */
         #launch-msg { 
-            position: fixed; top: 50%; width: 100%; text-align: center; 
+            position: fixed; top: 40%; width: 100%; text-align: center; 
             font-size: 22px; letter-spacing: 10px; opacity: 0; 
             transition: opacity 3s; pointer-events: none; 
             text-transform: uppercase; font-weight: 900; 
             color: var(--primary); text-shadow: 0 0 20px var(--primary);
-            animation: pulse 2s infinite alternate ease-in-out;
         }
-        @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.05); opacity: 1; } }
+
+        .mode-drop {
+            position: fixed; left: 50%; transform: translateX(-50%);
+            font-size: 45px; font-weight: 900; letter-spacing: 12px;
+            color: rgba(255,255,255,0.15); text-transform: uppercase;
+            white-space: nowrap; z-index: 10; pointer-events: none;
+            border-top: 1px solid rgba(59, 130, 246, 0.3);
+            border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -43,7 +49,7 @@
         <div class="loader-ring"></div>
         <h1 id="status-title">Update is coming</h1>
         <div id="timer">00h 00m 00s</div>
-        <div style="margin-top: 40px; font-size: 11px; opacity: 0.3; letter-spacing: 3px;">INITIALIZING FINAL VERSION</div>
+        <div style="margin-top: 40px; font-size: 11px; opacity: 0.3; letter-spacing: 3px;">REAL-TIME UPDATE V2.0.4</div>
     </div>
 
     <div id="launch-msg">Update is Loading...</div>
@@ -52,38 +58,51 @@
         let starSpeed = 0.45;
         let isLaunching = false;
         let hyperspaceMode = false;
+        
+        // NUR DIE ECHTEN FEATURES
+        const realFeatures = ["ONLINE MODUS", "NAME EINGEBEN", "NEUE ARENA", "GLOBAL RANKING", "MULTIPLAYER"];
 
-        // Admin Test: Alt + M
         window.addEventListener('keydown', e => {
             if (e.altKey && e.key.toLowerCase() === 'm') triggerLaunch();
         });
 
+        function spawnFeatureText() {
+            if(!isLaunching) return;
+            const ft = document.createElement('div');
+            ft.className = 'mode-drop';
+            ft.innerText = realFeatures[Math.floor(Math.random() * realFeatures.length)];
+            ft.style.top = "-200px";
+            document.body.appendChild(ft);
+
+            let y = -200;
+            const fall = setInterval(() => {
+                y += 1.2; 
+                ft.style.top = y + "px";
+                if(y > window.innerHeight + 200) { clearInterval(fall); ft.remove(); }
+            }, 20);
+        }
+
         function triggerLaunch() {
             if(isLaunching) return;
             isLaunching = true;
-            
-            // UI wegschicken
             document.getElementById('main-container').classList.add('launch-active');
             
-            // Launch Nachricht erscheint und bleibt unendlich
             setTimeout(() => {
                 document.getElementById('launch-msg').style.opacity = "1";
             }, 2500);
 
-            // Hyperspeed zünden
             starSpeed = 25;
             setTimeout(() => {
-                hyperspaceMode = true; // Ab hier unendliche Game-Objekte
+                hyperspaceMode = true; 
+                setInterval(spawnFeatureText, 9000); // Alle 9 Sek. ein echtes Feature
+                spawnFeatureText();
             }, 1800);
-
-            // HINWEIS: location.reload() wurde entfernt! 
-            // Der User bleibt jetzt unendlich in dieser Animation.
         }
 
         function updateTimer() {
             if(isLaunching) return;
             const target = new Date();
-            target.setHours(23, 12, 0, 0); // ZIELZEIT
+            target.setHours(23, 18, 0, 0); // ZIELZEIT 23:18
             const diff = target - new Date();
             
             if (diff <= 0) {
@@ -99,7 +118,6 @@
         setInterval(updateTimer, 1000);
         updateTimer();
 
-        // CANVAS ENGINE
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -107,12 +125,12 @@
         function init() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             particles = [];
-            for(let i=0; i<90; i++) {
+            for(let i=0; i<110; i++) {
                 particles.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
                     s: Math.random() * 2 + 1,
-                    type: Math.random() > 0.65 ? 'wall' : 'cube'
+                    type: Math.random() > 0.75 ? 'wall' : 'cube'
                 });
             }
         }
@@ -129,21 +147,15 @@
                 }
 
                 if(hyperspaceMode) {
-                    // UNENDLICHER FLOW
                     if(p.type === 'cube') {
                         ctx.fillStyle = "#3b82f6";
-                        ctx.shadowBlur = 15;
-                        ctx.shadowColor = "#3b82f6";
                         ctx.fillRect(p.x, p.y, 14, 14);
                         ctx.strokeStyle = "white";
                         ctx.strokeRect(p.x, p.y, 14, 14);
                     } else {
                         ctx.fillStyle = "#ef4444";
-                        ctx.shadowBlur = 15;
-                        ctx.shadowColor = "#ef4444";
                         ctx.fillRect(p.x, p.y, 6, 45);
                     }
-                    ctx.shadowBlur = 0;
                 } else if(isLaunching) {
                     ctx.fillStyle = "white";
                     ctx.fillRect(p.x, p.y, 1, p.s * 30);
