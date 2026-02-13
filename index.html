@@ -2,172 +2,155 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>ULTRA RUNNER - Maintenance</title>
+    <title>ULTRA RUNNER - Infinite Launch</title>
     <style>
-        :root { --primary: #3b82f6; --accent: #ec4899; --bg: #020617; --danger: #ef4444; --gold: #fbbf24; }
+        :root { --primary: #3b82f6; --accent: #ec4899; --bg: #020617; --danger: #ef4444; }
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; cursor: wait; }
-        #bg-canvas { position: fixed; inset: 0; z-index: -1; filter: blur(1px); }
+        #bg-canvas { position: fixed; inset: 0; z-index: -1; }
         
-        .update-box { text-align: center; z-index: 100; padding: 40px; pointer-events: none; }
-        
+        /* Das Menü fliegt nach oben weg */
+        #main-container { text-align: center; z-index: 100; transition: transform 4s cubic-bezier(0.6, 0, 0.4, 1), opacity 2s; }
+        .launch-active { transform: translateY(-150vh); opacity: 0; }
+
         .loader-ring { 
-            width: 120px; height: 120px; 
-            border: 4px solid rgba(255, 255, 255, 0.05); 
-            border-top: 4px solid var(--accent); 
-            border-bottom: 4px solid var(--primary); 
-            border-radius: 50%; margin: 0 auto 30px; 
-            animation: spin 1.2s linear infinite;
-            filter: drop-shadow(0 0 15px var(--primary));
+            width: 120px; height: 120px; border: 4px solid rgba(255, 255, 255, 0.05); 
+            border-top: 4px solid var(--accent); border-bottom: 4px solid var(--primary); 
+            border-radius: 50%; margin: 0 auto 30px; animation: spin 1.2s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         h1 { font-size: 42px; margin: 0; letter-spacing: 10px; text-transform: uppercase; background: linear-gradient(90deg, #fff, var(--primary), #fff); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite; }
         @keyframes shine { to { background-position: 200% center; } }
 
-        #timer { margin-top: 25px; font-size: 28px; letter-spacing: 5px; color: #fff; font-weight: 300; font-variant-numeric: tabular-nums; }
-
-        /* --- DYNAMISCHE GAME ELEMENTE --- */
-        .teaser { position: fixed; z-index: 50; pointer-events: none; transition: transform 0.1s linear; }
+        #timer { margin-top: 25px; font-size: 28px; letter-spacing: 5px; font-weight: 300; }
         
-        /* Würfel & Wände */
-        .cube { width: 35px; height: 35px; background: var(--primary); box-shadow: 0 0 25px var(--primary); border: 2px solid white; }
-        .wall { width: 25px; height: 90px; background: var(--danger); box-shadow: 0 0 30px var(--danger); }
-        
-        /* Feature-Boxen */
-        .f-box { 
-            background: rgba(15, 23, 42, 0.95); border: 1px solid var(--primary);
-            padding: 12px 24px; white-space: nowrap; font-size: 13px; font-weight: 900;
-            letter-spacing: 2px; text-transform: uppercase; color: white;
-            box-shadow: 0 0 20px rgba(59,130,246,0.4);
+        /* Die unendliche Nachricht */
+        #launch-msg { 
+            position: fixed; top: 50%; width: 100%; text-align: center; 
+            font-size: 22px; letter-spacing: 10px; opacity: 0; 
+            transition: opacity 3s; pointer-events: none; 
+            text-transform: uppercase; font-weight: 900; 
+            color: var(--primary); text-shadow: 0 0 20px var(--primary);
+            animation: pulse 2s infinite alternate ease-in-out;
         }
-        .f-box.gold { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 20px rgba(251,191,36,0.3); }
-        .f-box.accent { border-color: var(--accent); color: var(--accent); }
-
-        /* Login-Preview Glitch */
-        .login-preview {
-            position: fixed; bottom: 10%; left: 50%; transform: translateX(-50%);
-            background: rgba(2, 6, 23, 0.9); border: 1px solid var(--accent);
-            padding: 15px 40px; border-radius: 8px; z-index: 200; opacity: 0;
-            animation: preview-fade 4s ease-in-out forwards;
-        }
-        @keyframes preview-fade { 0% { opacity: 0; transform: translate(-50%, 20px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; } 100% { opacity: 0; filter: blur(10px); } }
-
-        .overlay { position: fixed; inset: 0; z-index: 9999; }
+        @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.05); opacity: 1; } }
     </style>
 </head>
 <body>
-    <div class="overlay"></div>
     <canvas id="bg-canvas"></canvas>
     
-    <div class="update-box">
+    <div id="main-container">
         <div class="loader-ring"></div>
-        <h1>Update is coming</h1>
-        <div id="timer">LÄDT...</div>
-        <p style="margin-top: 40px; font-size: 11px; opacity: 0.4; letter-spacing: 3px;">SYSTEM VERSION 2.0.4 - PREPARING GLOBAL LAUNCH</p>
+        <h1 id="status-title">Update is coming</h1>
+        <div id="timer">00h 00m 00s</div>
+        <div style="margin-top: 40px; font-size: 11px; opacity: 0.3; letter-spacing: 3px;">INITIALIZING FINAL VERSION</div>
     </div>
 
+    <div id="launch-msg">Update is Loading...</div>
+
     <script>
-        const features = [
-            {t: "ONLINE MODUS AKTIVIERT", c: "gold"},
-            {t: "HARDCORE MODE", c: "danger"},
-            {t: "MOON GRAVITY", c: "accent"},
-            {t: "SPEEDRUN (40s)", c: "primary"},
-            {t: "WELT-RANKING", c: "gold"},
-            {t: "LIVE DUELLE", c: "accent"},
-            {t: "NAME EINGEBEN...", c: "primary"},
-            {t: "60 FPS OPTIMIERUNG", c: "primary"},
-            {t: "NEUE SKINS", c: "accent"},
-            {t: "LEVEL-REMAKE", c: "gold"}
-        ];
+        let starSpeed = 0.45;
+        let isLaunching = false;
+        let hyperspaceMode = false;
 
-        function spawn() {
-            const el = document.createElement('div');
-            el.className = 'teaser';
+        // Admin Test: Alt + M
+        window.addEventListener('keydown', e => {
+            if (e.altKey && e.key.toLowerCase() === 'm') triggerLaunch();
+        });
+
+        function triggerLaunch() {
+            if(isLaunching) return;
+            isLaunching = true;
             
-            // Random Typ entscheiden
-            const typeRand = Math.random();
-            if(typeRand < 0.25) {
-                el.classList.add('cube');
-            } else if(typeRand < 0.5) {
-                el.classList.add('wall');
-            } else {
-                el.classList.add('f-box');
-                const feat = features[Math.floor(Math.random()*features.length)];
-                el.innerText = feat.t;
-                if(feat.c === 'gold') el.classList.add('gold');
-                if(feat.c === 'accent') el.classList.add('accent');
-            }
+            // UI wegschicken
+            document.getElementById('main-container').classList.add('launch-active');
+            
+            // Launch Nachricht erscheint und bleibt unendlich
+            setTimeout(() => {
+                document.getElementById('launch-msg').style.opacity = "1";
+            }, 2500);
 
-            // --- RICHTUNG WÜRFELN ---
-            const fromLeft = Math.random() > 0.5;
-            const startX = fromLeft ? -300 : window.innerWidth + 300;
-            const endX = fromLeft ? window.innerWidth + 300 : -300;
-            const speed = (Math.random() * 2 + 1.2) * (fromLeft ? 1 : -1);
+            // Hyperspeed zünden
+            starSpeed = 25;
+            setTimeout(() => {
+                hyperspaceMode = true; // Ab hier unendliche Game-Objekte
+            }, 1800);
 
-            el.style.left = startX + "px";
-            el.style.top = (Math.random() * 80 + 10) + "%";
-            document.body.appendChild(el);
-
-            let currentX = startX;
-            const move = setInterval(() => {
-                currentX += speed;
-                el.style.left = currentX + "px";
-                
-                // Prüfen ob aus dem Bild
-                if((fromLeft && currentX > endX) || (!fromLeft && currentX < endX)) {
-                    clearInterval(move);
-                    el.remove();
-                }
-            }, 10);
+            // HINWEIS: location.reload() wurde entfernt! 
+            // Der User bleibt jetzt unendlich in dieser Animation.
         }
 
-        function showLogin() {
-            const l = document.createElement('div');
-            l.className = 'login-preview';
-            l.innerHTML = `<span style="color:var(--accent); font-size:10px;">[UPDATE PREVIEW]</span><br><strong>LOGIN_REQUIRED: NAME EINGEBEN</strong>`;
-            document.body.appendChild(l);
-            setTimeout(() => l.remove(), 4000);
-        }
-
-        // Takt: Alle 20 Sekunden mehrere Sachen gleichzeitig "würfeln"
-        setInterval(() => {
-            spawn(); // Erstes Objekt
-            setTimeout(spawn, 3000); // Zweites Objekt kurz danach
-            if(Math.random() > 0.5) setTimeout(showLogin, 8000); // Login Glitch
-        }, 20000);
-
-        // Timer Logik (Ziel: 23:05 Uhr)
         function updateTimer() {
+            if(isLaunching) return;
             const target = new Date();
-            target.setHours(23, 5, 0, 0);
+            target.setHours(23, 12, 0, 0); // ZIELZEIT
             const diff = target - new Date();
-            if (diff <= 0) { 
-                document.getElementById('timer').innerText = "RELOADING..."; 
-                setTimeout(() => location.reload(), 2000);
-                return; 
+            
+            if (diff <= 0) {
+                triggerLaunch();
+                return;
             }
+
             const h = Math.floor(diff/3600000).toString().padStart(2,'0');
             const m = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
             const s = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
             document.getElementById('timer').innerText = `${h}h ${m}m ${s}s`;
         }
-        setInterval(updateTimer, 1000); updateTimer();
+        setInterval(updateTimer, 1000);
+        updateTimer();
 
-        // Sterne regnen nach UNTEN
+        // CANVAS ENGINE
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
-        let stars = [];
+        let particles = [];
+
         function init() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            stars = []; for(let i=0; i<100; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*1.5 + 0.3});
+            particles = [];
+            for(let i=0; i<90; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    s: Math.random() * 2 + 1,
+                    type: Math.random() > 0.65 ? 'wall' : 'cube'
+                });
+            }
         }
+
         function draw() {
-            ctx.fillStyle = "#020617"; ctx.fillRect(0,0,canvas.width, canvas.height);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.7)"; 
-            stars.forEach(s => { 
-                s.y += s.s * 0.45; 
-                if(s.y > canvas.height) s.y = -10; 
-                ctx.fillRect(s.x, s.y, s.s, s.s); 
+            ctx.fillStyle = "#020617";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(p => {
+                p.y += p.s * starSpeed;
+                if(p.y > canvas.height) {
+                    p.y = -100;
+                    p.x = Math.random() * canvas.width;
+                }
+
+                if(hyperspaceMode) {
+                    // UNENDLICHER FLOW
+                    if(p.type === 'cube') {
+                        ctx.fillStyle = "#3b82f6";
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = "#3b82f6";
+                        ctx.fillRect(p.x, p.y, 14, 14);
+                        ctx.strokeStyle = "white";
+                        ctx.strokeRect(p.x, p.y, 14, 14);
+                    } else {
+                        ctx.fillStyle = "#ef4444";
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = "#ef4444";
+                        ctx.fillRect(p.x, p.y, 6, 45);
+                    }
+                    ctx.shadowBlur = 0;
+                } else if(isLaunching) {
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(p.x, p.y, 1, p.s * 30);
+                } else {
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(p.x, p.y, p.s, p.s);
+                }
             });
             requestAnimationFrame(draw);
         }
