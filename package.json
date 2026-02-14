@@ -1,7 +1,7 @@
 {
   "name": "ultra-runner-server",
   "version": "1.0.0",
-  "description": "Backend für Ultra Runner Rocket League Edition",
+  "description": "Backend für Ultra Runner",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
