@@ -1,12 +1,13 @@
 {
-  "name": "runner-server",
+  "name": "ultra-runner-server",
   "version": "1.0.0",
-  "description": "Online Server für Runner-Online",
+  "description": "Backend für Ultra Runner",
   "main": "server.js",
-  "dependencies": {
-    "socket.io": "^4.7.2"
-  },
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
   }
 }
