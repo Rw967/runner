@@ -1,35 +1,41 @@
-const io = require('socket.io')(process.env.PORT || 3000, {
-    cors: { origin: "*" } // Erlaubt Verbindungen von überall
+const io = require("socket.io")(process.env.PORT || 3000, {
+  cors: { origin: "*" }
 });
 
-let players = {};
+let onlinePlayers = {};
+let highscores = []; // Hier werden die echten Highscores gespeichert
 
-console.log("Server läuft...");
+io.on("connection", (socket) => {
+  console.log("Spieler verbunden: " + socket.id);
 
-io.on('connection', (socket) => {
-    console.log("Ein Spieler ist beigetreten: " + socket.id);
+  // 1. Highscores beim Verbinden senden
+  socket.emit('updateLeaderboard', highscores);
 
-    // Neuen Spieler registrieren
-    players[socket.id] = { x: 480, y: 280, skin: '🟦' };
+  socket.on("playerMove", (data) => {
+    onlinePlayers[socket.id] = data;
+    // Sende Positionen an alle (für die Geister-Spieler im Hintergrund)
+    socket.broadcast.emit("updatePlayers", onlinePlayers);
+  });
 
-    // Alle Spieler über den neuen Spieler informieren
-    io.emit('updatePlayers', players);
+  // 2. Highscore-Logik: Wenn ein Spiel endet
+  socket.on("newHighscore", (data) => {
+    highscores.push({ n: data.name, s: data.score });
+    // Sortieren: Höchste zuerst
+    highscores.sort((a, b) => b.s - a.s);
+    // Nur Top 10 behalten
+    highscores = highscores.slice(0, 10);
+    // An alle senden
+    io.emit('updateLeaderboard', highscores);
+  });
 
-    // Wenn sich ein Spieler bewegt
-    socket.on('playerMove', (data) => {
-        if (players[socket.id]) {
-            players[socket.id].x = data.x;
-            players[socket.id].y = data.y;
-            players[socket.id].skin = data.skin;
-            // Position an alle anderen senden
-            socket.broadcast.emit('updatePlayers', players);
-        }
-    });
+  // 3. Lobby-Logik (Räume)
+  socket.on("joinLobby", (code) => {
+    socket.join(code);
+    console.log(`Spieler ${socket.id} ist Raum ${code} beigetreten`);
+  });
 
-    // Wenn ein Spieler das Spiel verlässt
-    socket.on('disconnect', () => {
-        console.log("Spieler weg: " + socket.id);
-        delete players[socket.id];
-        io.emit('updatePlayers', players);
-    });
+  socket.on("disconnect", () => {
+    delete onlinePlayers[socket.id];
+    io.emit("updatePlayers", onlinePlayers);
+  });
 });
