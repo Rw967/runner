@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>ULTRA RUNNER - Final Edition</title>
+    <title>ULTRA RUNNER - Online Edition</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         :root {
             --primary: #3b82f6;
@@ -85,10 +86,10 @@
             font-size: 14px;
         }
 
-            .menu-btn:hover {
-                background: #3b82f6;
-                transform: scale(1.02);
-            }
+        .menu-btn:hover {
+            background: #3b82f6;
+            transform: scale(1.02);
+        }
 
         input {
             width: 80%;
@@ -103,7 +104,6 @@
             outline: none;
         }
 
-        /* HUD & Ranking */
         #global-leaderboard {
             position: absolute;
             right: 15px;
@@ -142,7 +142,6 @@
             z-index: 10;
         }
 
-        /* Home Button oben links */
         #home-btn {
             position: absolute;
             top: 15px;
@@ -161,12 +160,16 @@
             transition: 0.2s;
         }
 
-            #home-btn:hover {
-                background: #3b82f6;
-            }
+        #home-btn:hover { background: #3b82f6; }
+        .hidden { display: none !important; }
 
-        .hidden {
-            display: none !important;
+        /* Online-Status Anzeige */
+        #connection-status {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 10px;
+            color: #ff4d4d;
         }
     </style>
 </head>
@@ -175,6 +178,7 @@
     <canvas id="bg-canvas"></canvas>
 
     <div id="game-container">
+        <div id="connection-status">Offline</div>
         <div id="home-btn" class="hidden" onclick="exitToMenu()">🏠</div>
 
         <div id="hud" class="hidden">
@@ -213,7 +217,6 @@
             <div class="panel">
                 <h1>SETTINGS</h1>
                 <button class="menu-btn" id="partikelToggle" onclick="toggleParticles()">PARTIKEL: AN</button>
-                <p style="font-size: 11px; color: #94a3b8;">Schalte Partikel aus, falls es ruckelt.</p>
                 <button class="menu-btn" onclick="showScreen('screen-main')">ZURÜCK</button>
             </div>
         </div>
@@ -224,7 +227,7 @@
                 <button class="menu-btn" onclick="initGame('normal')">NORMAL</button>
                 <button class="menu-btn" onclick="initGame('hardcore')">HARDCORE</button>
                 <button class="menu-btn" onclick="initGame('moon')">MOON</button>
-                <button class="menu-btn" onclick="initGame('speedrun')">SPEEDRUN (40s)</button>
+                <button class="menu-btn" onclick="initGame('speedrun')">SPEEDRUN</button>
                 <button class="menu-btn" onclick="showScreen('screen-main')">ZURÜCK</button>
             </div>
         </div>
@@ -240,6 +243,20 @@
     </div>
 
     <script>
+        // --- ONLINE LOGIK ---
+        const socket = io("https://runner-1-gp5g.onrender.com");
+        let remotePlayers = {};
+
+        socket.on('connect', () => {
+            document.getElementById('connection-status').innerText = "Online";
+            document.getElementById('connection-status').style.color = "#22c55e";
+        });
+
+        socket.on('updatePlayers', (serverPlayers) => {
+            remotePlayers = serverPlayers;
+        });
+
+        // --- GAME ENGINE ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const bgCanvas = document.getElementById('bg-canvas');
@@ -249,151 +266,156 @@
         let userName = "";
         let particlesEnabled = true;
         const blacklist = ["neger", "bastard", "hurensohn", "ficker", "nazi", "hitler", "wichser", "arsch"];
-        let worldScores = [{n: "Luca", s: 1400}, {n: "Alex", s: 420}, {n: "Justin", s: 310}, {n: "Sarah", s: 150}];
+        let worldScores = [{n: "Luca", s: 1400}, {n: "Alex", s: 420}, {n: "Sarah", s: 150}];
         let currentLobby = [];
 
         function validateUser() {
-        const val = document.getElementById('nameInput').value.trim();
-        const isBad = blacklist.some(w => val.toLowerCase().includes(w));
-        if(isBad) {
-        document.getElementById('errorMsg').innerText = "Spielername nicht möglich, bitte probieren Sie einen anderen Spielernamen.";
-        } else if(val.length < 2) {
-        document.getElementById('errorMsg').innerText = "Name zu kurz!";
-        } else {
-        userName = val;
-        showScreen('screen-main');
-        }
+            const val = document.getElementById('nameInput').value.trim();
+            if(blacklist.some(w => val.toLowerCase().includes(w))) {
+                document.getElementById('errorMsg').innerText = "Name nicht erlaubt.";
+            } else if(val.length < 2) {
+                document.getElementById('errorMsg').innerText = "Name zu kurz!";
+            } else {
+                userName = val;
+                showScreen('screen-main');
+            }
         }
 
         function toggleParticles() {
-        particlesEnabled = !particlesEnabled;
-        document.getElementById('partikelToggle').innerText = "PARTIKEL: " + (particlesEnabled ? "AN" : "AUS");
+            particlesEnabled = !particlesEnabled;
+            document.getElementById('partikelToggle').innerText = "PARTIKEL: " + (particlesEnabled ? "AN" : "AUS");
         }
 
         function exitToMenu() {
-        gameState = 'menu';
-        showScreen('screen-main');
+            gameState = 'menu';
+            showScreen('screen-main');
         }
 
         function startDuel() {
-        currentLobby = [{n: userName, s: 0, me: true}, {n: "Alex Bot", s: 0, bot: true}, {n: "Sarah Bot", s: 0, bot: true}];
-        initGame('normal', true);
+            currentLobby = [{n: userName, s: 0, me: true}];
+            initGame('normal', true);
         }
 
         function showScreen(id) {
-        document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
-        document.getElementById('hud').classList.add('hidden');
-        document.getElementById('global-leaderboard').classList.add('hidden');
-        document.getElementById('home-btn').classList.add('hidden');
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('global-leaderboard').classList.add('hidden');
+            document.getElementById('home-btn').classList.add('hidden');
         }
 
-        // GAME ENGINE
         let gameState = 'menu', score = 0, speed = 7, obstacles = [], time = 40;
         let isPressing = false, jumpTimer = 0;
         const player = { x: 100, y: 300, w: 45, h: 45, dy: 0, grav: 0.85 };
 
         function initGame(mode, online = false) {
-        gameState = 'playing';
-        score = 0; time = 40;
-        speed = (mode === 'hardcore' ? 10.5 : 7.5);
-        obstacles = []; player.y = 300; player.dy = 0;
-        player.grav = (mode === 'moon' ? 0.35 : 0.85);
+            gameState = 'playing';
+            score = 0; time = 40;
+            speed = (mode === 'hardcore' ? 10.5 : 7.5);
+            obstacles = []; player.y = 300; player.dy = 0;
+            player.grav = (mode === 'moon' ? 0.35 : 0.85);
 
-        document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById('hud').classList.remove('hidden');
-        document.getElementById('home-btn').classList.remove('hidden');
-        document.getElementById('global-leaderboard').classList.remove('hidden');
-        document.getElementById('modeNameHUD').innerText = mode.toUpperCase();
-        document.getElementById('timerBox').classList.toggle('hidden', mode !== 'speedrun');
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('home-btn').classList.remove('hidden');
+            document.getElementById('global-leaderboard').classList.remove('hidden');
+            document.getElementById('modeNameHUD').innerText = mode.toUpperCase();
+            document.getElementById('timerBox').classList.toggle('hidden', mode !== 'speedrun');
 
-        updateRankings();
-        update();
+            updateRankings();
+            update();
         }
 
         function updateRankings() {
-        const container = document.getElementById('leaderRows');
-        currentLobby.forEach(p => {
-        if(p.bot) p.s += (Math.random() < 0.1 ? 1 : 0);
-        if(p.me) p.s = score;
-        });
-        let combined = [...worldScores, ...currentLobby.filter(p => !worldScores.find(w => w.n === p.n))];
-        combined.sort((a,b) => b.s - a.s);
-        container.innerHTML = combined.slice(0, 8).map((p, i) => `
-        <div class="rank-entry ${p.me ? 'is-me' : ''}">
-        <span>#${i+1} ${p.n}</span><span>${p.s}</span>
-        </div>
-        `).join('');
+            const container = document.getElementById('leaderRows');
+            let combined = [...worldScores, {n: userName, s: score, me: true}];
+            combined.sort((a,b) => b.s - a.s);
+            container.innerHTML = combined.slice(0, 8).map((p, i) => `
+                <div class="rank-entry ${p.me ? 'is-me' : ''}">
+                    <span>#${i+1} ${p.n}</span><span>${p.s}</span>
+                </div>
+            `).join('');
         }
 
         function update() {
-        if(gameState !== 'playing') return;
-        ctx.clearRect(0,0,canvas.width, canvas.height);
+            if(gameState !== 'playing') return;
+            ctx.clearRect(0,0,canvas.width, canvas.height);
 
-        // Timer für Speedrun
-        if(document.getElementById('modeNameHUD').innerText === 'SPEEDRUN') {
-        time -= 1/60;
-        document.getElementById('timeVal').innerText = Math.ceil(time);
-        if(time <= 0) gameOver();
-        }
+            // Online-Position senden
+            socket.emit('playerMove', { x: player.x, y: player.y, skin: '👤', name: userName });
 
-        // Jump & Physics
-        if(isPressing && jumpTimer > 0) { player.dy = -11.5; jumpTimer--; }
-        player.dy += player.grav; player.y += player.dy;
-        if(player.y > canvas.height - 85) { player.y = canvas.height - 85; player.dy = 0; player.onGround = true; } else player.onGround = false;
+            if(document.getElementById('modeNameHUD').innerText === 'SPEEDRUN') {
+                time -= 1/60;
+                document.getElementById('timeVal').innerText = Math.ceil(time);
+                if(time <= 0) gameOver();
+            }
 
-        // Player
-        ctx.fillStyle = "#3b82f6"; ctx.shadowBlur = 10; ctx.shadowColor = "#3b82f6";
-        ctx.fillRect(player.x, player.y, player.w, player.h);
-        ctx.shadowBlur = 0;
+            if(isPressing && jumpTimer > 0) { player.dy = -11.5; jumpTimer--; }
+            player.dy += player.grav; player.y += player.dy;
+            if(player.y > canvas.height - 85) { player.y = canvas.height - 85; player.dy = 0; player.onGround = true; } else player.onGround = false;
 
-        // Boden
-        ctx.fillStyle = "#334155"; ctx.fillRect(0, canvas.height-40, canvas.width, 40);
+            // Zeichne andere Spieler
+            for(let id in remotePlayers) {
+                if(id !== socket.id) {
+                    let rp = remotePlayers[id];
+                    ctx.fillStyle = "rgba(236, 72, 153, 0.6)"; // Pink für Gegner
+                    ctx.fillRect(rp.x, rp.y, player.w, player.h);
+                    ctx.fillStyle = "white";
+                    ctx.font = "10px Arial";
+                    ctx.fillText(rp.name || "Spieler", rp.x, rp.y - 5);
+                }
+            }
 
-        // Hindernisse
-        if(Math.random() < 0.02 && (obstacles.length === 0 || (canvas.width - obstacles[obstacles.length-1].x) > (speed * 42))) {
-        let h = 40 + Math.random()*85;
-        obstacles.push({x: canvas.width, y: canvas.height-40-h, w: 35, h: h});
-        }
+            // Eigener Player
+            ctx.fillStyle = "#3b82f6"; ctx.shadowBlur = 15; ctx.shadowColor = "#3b82f6";
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+            ctx.shadowBlur = 0;
 
-        obstacles.forEach((o, i) => {
-        o.x -= speed;
-        ctx.fillStyle = "#ef4444"; ctx.fillRect(o.x, o.y, o.w, o.h);
-        if(player.x < o.x + o.w && player.x + player.w > o.x && player.y < o.y + o.h && player.y + player.h > o.y) gameOver();
-        if(o.x < -40) { obstacles.splice(i,1); score++; speed += 0.012; document.getElementById('scoreVal').innerText = score; updateRankings(); }
-        });
+            // Boden
+            ctx.fillStyle = "#334155"; ctx.fillRect(0, canvas.height-40, canvas.width, 40);
 
-        requestAnimationFrame(update);
+            // Hindernisse
+            if(Math.random() < 0.02 && (obstacles.length === 0 || (canvas.width - obstacles[obstacles.length-1].x) > (speed * 42))) {
+                let h = 40 + Math.random()*85;
+                obstacles.push({x: canvas.width, y: canvas.height-40-h, w: 35, h: h});
+            }
+
+            obstacles.forEach((o, i) => {
+                o.x -= speed;
+                ctx.fillStyle = "#ef4444"; ctx.fillRect(o.x, o.y, o.w, o.h);
+                if(player.x < o.x + o.w && player.x + player.w > o.x && player.y < o.y + o.h && player.y + player.h > o.y) gameOver();
+                if(o.x < -40) { obstacles.splice(i,1); score++; speed += 0.012; document.getElementById('scoreVal').innerText = score; updateRankings(); }
+            });
+
+            requestAnimationFrame(update);
         }
 
         function gameOver() {
-        gameState = 'over';
-        showScreen('screen-over');
-        document.getElementById('lastScore').innerText = score;
+            gameState = 'over';
+            showScreen('screen-over');
+            document.getElementById('lastScore').innerText = score;
         }
 
         function retryGame() { initGame(document.getElementById('modeNameHUD').innerText.toLowerCase()); }
 
-        // Controls
         window.onmousedown = () => { if(player.onGround) { jumpTimer = 25; isPressing = true; } };
         window.onmouseup = () => isPressing = false;
         window.onkeydown = (e) => {
-        if(e.code === 'Space' && player.onGround) { jumpTimer = 25; isPressing = true; }
-        if(e.code === 'ControlLeft') player.dy = 22; // STURZFLUG
+            if(e.code === 'Space' && player.onGround) { jumpTimer = 25; isPressing = true; }
+            if(e.code === 'ControlLeft') player.dy = 22; 
         };
         window.onkeyup = (e) => { if(e.code === 'Space') isPressing = false; };
 
-        // Hintergrund
         let stars = [];
         function initBg() {
-        bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
-        stars = []; for(let i=0; i<80; i++) stars.push({x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height, s: Math.random()*1.5});
+            bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+            stars = []; for(let i=0; i<80; i++) stars.push({x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height, s: Math.random()*1.5});
         }
         function drawBg() {
-        bctx.fillStyle = "#020617"; bctx.fillRect(0,0,bgCanvas.width, bgCanvas.height);
-        bctx.fillStyle = "white";
-        stars.forEach(s => { s.y += s.s * 0.1; if(s.y > bgCanvas.height) s.y = 0; bctx.fillRect(s.x, s.y, s.s, s.s); });
-        requestAnimationFrame(drawBg);
+            bctx.fillStyle = "#020617"; bctx.fillRect(0,0,bgCanvas.width, bgCanvas.height);
+            bctx.fillStyle = "white";
+            stars.forEach(s => { s.y += s.s * 0.1; if(s.y > bgCanvas.height) s.y = 0; bctx.fillRect(s.x, s.y, s.s, s.s); });
+            requestAnimationFrame(drawBg);
         }
         window.onresize = initBg; initBg(); drawBg();
     </script>
