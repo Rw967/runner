@@ -244,7 +244,7 @@
                 <div class="panel" style="width: auto;">
                     <h3 id="txt-players-title">SPIELER</h3>
                     <div id="playerList"></div>
-                    <button class="menu-btn" onclick="showScreen('screen-friends')" style="margin-top:20px; border-color:#ef4444;" id="txt-btn-leave">VERLASSEN</button>
+                    <button class="menu-btn" onclick="leaveRoom()" style="margin-top:20px; border-color:#ef4444;" id="txt-btn-leave">VERLASSEN</button>
                 </div>
                 <div class="panel" id="hostSettings" style="width: auto;">
                     <h3 id="txt-host-settings">EINSTELLUNGEN</h3>
@@ -312,9 +312,10 @@
         canvas.width = 950; canvas.height = 500;
 
         let userName = "";
+        let currentRoom = null;
         let particlesEnabled = true;
-        let personalHighscore = localStorage.getItem('ultraRunner_highscore') || 0;
-        let worldScores = [{n: "Lukas", s: 1000}, {n: "PlayerX", s: 500}]; 
+        let personalHighscore = parseInt(localStorage.getItem('ultraRunner_highscore')) || 0;
+        let worldScores = []; 
         let gameState = 'menu', score = 0, speed = 7, obstacles = [], time = 40;
         let isPressing = false, jumpTimer = 0;
         const player = { x: 100, y: 300, w: 45, h: 45, dy: 0, grav: 0.85, onGround: false };
@@ -370,6 +371,8 @@
 
         function createRoom() {
             const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            currentRoom = code;
+            socket.emit('joinRoom', { room: code, name: userName });
             document.getElementById('displayCode').innerText = code;
             document.getElementById('playerList').innerHTML = `<p>${userName} <span style="color:var(--gold)">(HOST)</span></p>`;
             document.getElementById('hostSettings').classList.remove('hidden');
@@ -379,19 +382,50 @@
         function joinRoom() {
             const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
             if(code.length !== 4) return alert("Code ungültig!");
+            currentRoom = code;
+            socket.emit('joinRoom', { room: code, name: userName });
             document.getElementById('displayCode').innerText = code;
             document.getElementById('playerList').innerHTML = `<p>${userName}</p><p style="font-size:10px; opacity:0.5;">Warte auf Host...</p>`;
             document.getElementById('hostSettings').classList.add('hidden');
             showScreen('screen-lobby-room');
         }
 
-        function startLobbyGame() { initGame(document.getElementById('lobbyModeSelect').value); }
+        function leaveRoom() {
+            socket.emit('leaveRoom', currentRoom);
+            currentRoom = null;
+            showScreen('screen-friends');
+        }
+
+        function startLobbyGame() { 
+            const m = document.getElementById('lobbyModeSelect').value;
+            socket.emit('startRoomGame', { room: currentRoom, mode: m });
+            initGame(m); 
+        }
 
         socket.on('connect', () => {
             document.getElementById('connection-status').innerText = "Online";
             document.getElementById('connection-status').style.color = "#22c55e";
         });
-        socket.on('updatePlayers', (serverPlayers) => { remotePlayers = serverPlayers; });
+
+        socket.on('roomStarted', (data) => {
+            if(gameState !== 'playing') initGame(data.mode);
+        });
+
+        socket.on('updateRankings', (data) => {
+            worldScores = data;
+            updateRankingsUI();
+        });
+
+        socket.on('updatePlayers', (serverPlayers) => { 
+            remotePlayers = serverPlayers; 
+            if(currentRoom) {
+                let list = "";
+                for(let id in serverPlayers) {
+                    list += `<p>${serverPlayers[id].name || 'Spieler'}</p>`;
+                }
+                document.getElementById('playerList').innerHTML = list;
+            }
+        });
 
         function toggleParticles() {
             particlesEnabled = !particlesEnabled;
@@ -411,20 +445,22 @@
             document.getElementById('modeNameHUD').innerText = mode.toUpperCase();
             document.getElementById('timerBox').classList.toggle('hidden', mode !== 'speedrun');
             
-            // Highscore laden
             document.getElementById('scoreVal').innerText = "0";
             document.getElementById('bestValHUD').innerText = personalHighscore;
 
-            updateRankings();
+            updateRankingsUI();
             update();
         }
 
-        function updateRankings() {
+        function updateRankingsUI() {
             const container = document.getElementById('leaderRows');
-            let combined = [...worldScores, {n: userName, s: score, me: true}];
+            let combined = [...worldScores];
+            if(!combined.find(p => p.n === userName)) {
+                combined.push({n: userName, s: score});
+            }
             combined.sort((a,b) => b.s - a.s);
             container.innerHTML = combined.slice(0, 8).map((p, i) => `
-                <div class="rank-entry ${p.me ? 'is-me' : ''}">
+                <div class="rank-entry ${p.n === userName ? 'is-me' : ''}">
                     <span>#${i+1} ${p.n}</span><span>${p.s}</span>
                 </div>
             `).join('');
@@ -434,7 +470,7 @@
             if(gameState !== 'playing') return;
             ctx.clearRect(0,0,canvas.width, canvas.height);
 
-            socket.emit('playerMove', { x: player.x, y: player.y, skin: '👤', name: userName });
+            socket.emit('playerMove', { x: player.x, y: player.y, name: userName, room: currentRoom });
 
             if(document.getElementById('modeNameHUD').innerText === 'SPEEDRUN') {
                 time -= 1/60;
@@ -442,7 +478,6 @@
                 if(time <= 0) gameOver();
             }
 
-            // SPRUNG LOGIK (ORIGINAL SCOTTY)
             if(isPressing && jumpTimer > 0) { 
                 player.dy = -11.5; 
                 jumpTimer--; 
@@ -487,14 +522,7 @@
                     score++; 
                     speed += 0.01; 
                     document.getElementById('scoreVal').innerText = score; 
-
-                    // ECHTZEIT HIGHSCORE CHECK
-                    if(score > personalHighscore) {
-                        personalHighscore = score;
-                        document.getElementById('bestValHUD').innerText = personalHighscore;
-                        localStorage.setItem('ultraRunner_highscore', personalHighscore);
-                    }
-                    updateRankings(); 
+                    updateRankingsUI(); 
                 }
             });
 
@@ -502,17 +530,28 @@
         }
 
         function gameOver() {
-            gameState = 'over'; deathSound.play();
+            if(gameState === 'over') return;
+            gameState = 'over'; 
+            deathSound.play();
+
+            if(score > personalHighscore) {
+                personalHighscore = score;
+                localStorage.setItem('ultraRunner_highscore', personalHighscore);
+            }
+
+            socket.emit('submitScore', { name: userName, score: personalHighscore });
+
             document.getElementById('lastScore').innerText = score;
             document.getElementById('bestScoreOver').innerText = personalHighscore;
+            document.getElementById('bestValHUD').innerText = personalHighscore;
+            
             showScreen('screen-over');
         }
 
         function retryGame() { initGame(document.getElementById('modeNameHUD').innerText.toLowerCase()); }
 
-        // --- INPUTS (ORIGINAL) ---
         window.onmousedown = () => { 
-            if(player.onGround) { 
+            if(player.onGround && gameState === 'playing') { 
                 jumpTimer = 25; 
                 isPressing = true; 
                 jumpSound.play(); 
@@ -521,7 +560,7 @@
         window.onmouseup = () => isPressing = false;
 
         window.onkeydown = (e) => {
-            if(e.code === 'Space' && player.onGround) { 
+            if(e.code === 'Space' && player.onGround && gameState === 'playing') { 
                 jumpTimer = 25; 
                 isPressing = true; 
                 jumpSound.play(); 
