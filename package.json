@@ -1,0 +1,12 @@
+{
+  "name": "runner-server",
+  "version": "1.0.0",
+  "description": "Online Server für Runner-Online",
+  "main": "server.js",
+  "dependencies": {
+    "socket.io": "^4.7.2"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
