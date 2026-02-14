@@ -2,51 +2,83 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>ULTRA RUNNER - Professional Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULTRA RUNNER - Global Ranking & Owner Edition V5</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
     <style>
+        /* =========================================
+           BASE STYLES & VARIABLES
+           ========================================= */
         :root {
-            --primary: #3b82f6;
-            --accent: #ec4899;
-            --gold: #fbbf24;
-            --bg: #020617;
+            --primary-blue: #3b82f6;
+            --accent-pink: #ec4899;
+            --gold-winner: #fbbf24;
+            --bg-deep: #020617;
+            --danger-red: #ef4444;
+            --success-green: #22c55e;
+            --panel-glass: rgba(15, 23, 42, 0.96);
+            --border-light: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
         }
 
         body {
             margin: 0;
+            padding: 0;
             overflow: hidden;
-            background: var(--bg);
-            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-deep);
+            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            color: white;
+            color: var(--text-main);
             user-select: none;
         }
 
+        /* =========================================
+           BACKGROUND ANIMATION
+           ========================================= */
         #bg-canvas {
             position: fixed;
-            inset: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: -1;
         }
 
+        /* =========================================
+           MAIN GAME CONTAINER
+           ========================================= */
         #game-container {
             position: relative;
-            width: 950px;
-            height: 500px;
-            border-radius: 20px;
+            width: 1050px;
+            height: 650px;
+            border-radius: 35px;
             overflow: hidden;
-            box-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
-            background: #1e293b;
-            border: 2px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 100px rgba(59, 130, 246, 0.4);
+            background-color: #0f172a;
+            border: 4px solid rgba(255, 255, 255, 0.08);
         }
 
+        /* =========================================
+           UI SCREENS (OVERLAYS)
+           ========================================= */
         .ui-screen {
             position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.96);
-            backdrop-filter: blur(10px);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(7, 10, 20, 0.98);
+            backdrop-filter: blur(25px);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -55,130 +87,264 @@
         }
 
         .panel {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 45px;
+            border-radius: 30px;
+            border: 1px solid var(--border-light);
             text-align: center;
-            width: 400px;
+            width: 550px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
+        /* =========================================
+           TYPOGRAPHY
+           ========================================= */
         h1 {
-            font-size: 38px;
+            font-size: 55px;
             margin: 0;
-            background: linear-gradient(45deg, #3b82f6, #ec4899);
+            padding: 0;
+            background: linear-gradient(135deg, #3b82f6 0%, #ec4899 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: -1px;
         }
 
         h2 {
             font-size: 14px;
-            color: #64748b;
+            color: var(--primary-blue);
+            text-transform: uppercase;
+            letter-spacing: 4px;
             margin-bottom: 10px;
-            letter-spacing: 2px;
         }
 
+        h3 {
+            font-size: 20px;
+            color: var(--gold-winner);
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        /* =========================================
+           BUTTONS & INPUTS
+           ========================================= */
         .menu-btn {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #3b82f6;
+            border: 2px solid var(--primary-blue);
             color: white;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 18px 25px;
+            border-radius: 15px;
             cursor: pointer;
             width: 100%;
-            margin: 6px 0;
-            font-weight: bold;
-            transition: 0.2s;
-            font-size: 14px;
+            margin: 12px 0;
+            font-weight: 800;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 16px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .menu-btn:hover {
-            background: #3b82f6;
-            transform: scale(1.02);
+            .menu-btn:hover {
+                background: var(--primary-blue);
+                transform: translateY(-3px) scale(1.02);
+                box-shadow: 0 10px 30px rgba(59, 130, 246, 0.5);
+            }
+
+        .danger-btn {
+            border-color: var(--danger-red);
+            color: var(--danger-red);
         }
 
-        input {
-            width: 80%;
-            padding: 12px;
+            .danger-btn:hover {
+                background: var(--danger-red);
+                color: white;
+                box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+            }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 95%;
+            padding: 18px;
             margin: 15px 0;
-            border-radius: 8px;
-            border: 1px solid #3b82f6;
-            background: rgba(0,0,0,0.4);
+            border-radius: 12px;
+            border: 2px solid var(--border-light);
+            background: rgba(0, 0, 0, 0.5);
             color: white;
             text-align: center;
             font-size: 18px;
-            outline: none;
+            transition: 0.3s;
         }
 
-        #global-leaderboard {
-            position: absolute;
-            right: 15px;
-            top: 60px;
-            width: 170px;
-            background: rgba(0,0,0,0.7);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--gold);
-            z-index: 50;
+        input:focus {
+            border-color: var(--accent-pink);
+            background: rgba(0, 0, 0, 0.8);
         }
 
-        .rank-entry {
+        /* =========================================
+           LEADERBOARD TABS (Rocket League Style)
+           ========================================= */
+        .tabs-header {
             display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-            font-size: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            gap: 15px;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 20px;
+            width: 85%;
+            justify-content: center;
         }
 
-        .is-me { color: #22c55e; font-weight: bold; }
+        .tab-trigger {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 15px 35px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 2px;
+            transition: 0.4s;
+            border-radius: 12px;
+        }
 
-        #hud {
+            .tab-trigger.active {
+                color: white;
+                background: var(--primary-blue);
+                box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+            }
+
+        .ranking-container {
+            width: 90%;
+            height: 420px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .rank-item {
+            display: grid;
+            grid-template-columns: 60px 1fr 120px;
+            padding: 20px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            align-items: center;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+
+            .rank-item:hover {
+                background: rgba(255, 255, 255, 0.07);
+                border-color: var(--border-light);
+            }
+
+        .rank-number {
+            font-weight: 900;
+            font-size: 20px;
+            color: var(--gold-winner);
+        }
+
+        .rank-name {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .rank-score {
+            text-align: right;
+            font-weight: 900;
+            font-size: 22px;
+            color: var(--success-green);
+        }
+
+        .me-highlight {
+            border: 2px solid var(--success-green);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        /* =========================================
+           HUD & OVERLAYS
+           ========================================= */
+        #hud-display {
             position: absolute;
-            top: 15px;
+            top: 35px;
             width: 100%;
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 70px;
             pointer-events: none;
-            font-size: 20px;
-            font-weight: bold;
-            z-index: 10;
+            z-index: 50;
         }
 
-        #home-btn {
+        .hud-stat {
+            font-size: 30px;
+            font-weight: 900;
+            text-shadow: 3px 3px 10px rgba(0,0,0,0.8);
+        }
+
+        #home-nav-btn {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid #3b82f6;
-            border-radius: 8px;
+            top: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid var(--primary-blue);
+            border-radius: 18px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            z-index: 150;
+            font-size: 30px;
+            z-index: 200;
+            transition: 0.3s;
         }
 
-        .hidden { display: none !important; }
+            #home-nav-btn:hover {
+                background: var(--primary-blue);
+                transform: rotate(-10deg) scale(1.1);
+            }
 
-        #connection-status {
+        #countdown-text {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
-            font-size: 10px;
-            color: #ff4d4d;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 280px;
+            font-weight: 900;
+            color: var(--gold-winner);
+            z-index: 1000;
+            pointer-events: none;
+            text-shadow: 0 0 80px rgba(0,0,0,0.9);
         }
 
-        .lobby-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
+        /* =========================================
+           MISC
+           ========================================= */
+        .hidden {
+            display: none !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-blue);
+            border-radius: 10px;
+            border: 2px solid #0f172a;
         }
     </style>
 </head>
@@ -187,404 +353,635 @@
     <canvas id="bg-canvas"></canvas>
 
     <div id="game-container">
-        <div id="connection-status">Offline</div>
-        <div id="home-btn" class="hidden" onclick="exitToMenu()">🏠</div>
 
-        <div id="hud" class="hidden">
-            <div>SCORE: <span id="scoreVal">0</span></div>
-            <div style="color:var(--gold)">BEST: <span id="bestValHUD">0</span></div>
-            <div id="timerBox" class="hidden">TIME: <span id="timeVal">40</span>s</div>
-            <div id="modeNameHUD" style="color:var(--accent)">NORMAL</div>
-        </div>
+        <div id="countdown-text" class="hidden"></div>
 
-        <div id="global-leaderboard" class="hidden">
-            <div id="leaderTitle" style="text-align:center; color:var(--gold); font-size:10px; margin-bottom:5px;">🏆 WELT-RANKING</div>
-            <div id="leaderRows"></div>
+        <div id="home-nav-btn" class="hidden" onclick="returnToMenu()">🏠</div>
+
+        <div id="hud-display" class="hidden">
+            <div class="hud-stat" style="color: white;">SCORE: <span id="val-score">0</span></div>
+            <div class="hud-stat" style="color: var(--gold-winner);">BEST: <span id="val-best">0</span></div>
+            <div id="hud-timer" class="hud-stat hidden" style="color: var(--accent-pink);">TIME: <span id="val-time">60</span>s</div>
         </div>
 
         <canvas id="gameCanvas"></canvas>
 
-        <div id="screen-name" class="ui-screen">
+        <div id="screen-login" class="ui-screen">
             <div class="panel">
-                <h1 id="txt-login-title">PLAYER LOGIN</h1>
-                <input type="text" id="nameInput" placeholder="Name..." maxlength="12">
-                <p id="errorMsg" style="color: #ff4d4d; font-size: 12px; height: 15px;"></p>
-                <button class="menu-btn" onclick="validateUser()" id="txt-login-btn">STARTEN</button>
+                <h2>System-Initialisierung</h2>
+                <h1>LOGIN</h1>
+                <input type="text" id="userInput" placeholder="Dein Pilot-Name..." maxlength="12">
+                <p id="loginError" style="color: var(--danger-red); font-size: 14px; height: 20px; margin: 10px 0;"></p>
+                <button class="menu-btn" onclick="processLogin()">LOGIN BESTÄTIGEN</button>
             </div>
         </div>
 
-        <div id="screen-main" class="ui-screen hidden">
-            <h2 id="txt-main-subtitle">HAUPTMENÜ</h2>
+        <div id="screen-main-menu" class="ui-screen hidden">
+            <h2>Kommandozentrale</h2>
             <h1>ULTRA RUNNER</h1>
-            <div class="panel" style="border:none; background:transparent;">
-                <button class="menu-btn" onclick="showScreen('screen-modes')" id="txt-btn-modes">MODI</button>
-                <button class="menu-btn" onclick="showScreen('screen-friends')" style="border-color: var(--accent);" id="txt-btn-friends">MIT FREUNDEN SPIELEN</button>
-                <div style="margin-top: 30px;">
-                    <button class="menu-btn" onclick="showScreen('screen-settings')" style="font-size:11px; opacity:0.6;" id="txt-btn-settings">EINSTELLUNGEN</button>
-                    <button class="menu-btn" onclick="showScreen('screen-name')" style="font-size:11px; opacity:0.6;" id="txt-btn-rename">NAME ÄNDERN</button>
+            <div class="panel" style="background:transparent; border:none; width: 650px;">
+                <button class="menu-btn" onclick="showScreen('screen-solo-modes')">SOLO MISSION STARTEN</button>
+                <button class="menu-btn" onclick="showScreen('screen-multi-lobby')" style="border-color: var(--accent-pink);">MULTIPLAYER ARENA</button>
+                <button class="menu-btn" onclick="openGlobalRankings()" style="border-color: var(--gold-winner); color: var(--gold-winner);">LEADERBOARDS (GLOBAL)</button>
+
+                <div style="margin-top: 50px; border-top: 1px solid var(--border-light); padding-top: 30px; display: flex; gap: 15px;">
+                    <button class="menu-btn" onclick="showScreen('screen-settings')" style="font-size: 11px; opacity: 0.8;">OPTIONEN</button>
+                    <button class="menu-btn danger-btn" onclick="showScreen('screen-confirm-reset')" style="font-size: 11px;">ACCOUNT LÖSCHEN</button>
                 </div>
             </div>
         </div>
 
-        <div id="screen-friends" class="ui-screen hidden">
-            <h1 id="txt-lobby-title">LOBBY</h1>
+        <div id="screen-leaderboards" class="ui-screen hidden">
+            <h2>Halle des Ruhms</h2>
+            <h1>RANKINGS</h1>
+
+            <div class="tabs-header">
+                <button class="tab-trigger active" id="tab-btn-global" onclick="setRankingTab('global')">WELTWEIT</button>
+                <button class="tab-trigger" id="tab-btn-friends" onclick="setRankingTab('friends')">LOBBY (ONLINE)</button>
+                <button class="tab-trigger" id="tab-btn-personal" onclick="setRankingTab('personal')">MEINE STATS</button>
+            </div>
+
+            <div class="panel" style="width: 85%; height: 480px; padding: 20px;">
+                <div id="ranking-list-content" class="ranking-container">
+                </div>
+            </div>
+
+            <button class="menu-btn" onclick="showScreen('screen-main-menu')" style="width: 250px; margin-top: 25px;">ZURÜCK ZUR BASIS</button>
+        </div>
+
+        <div id="screen-solo-modes" class="ui-screen hidden">
+            <h2>Wähle deine Gefahr</h2>
+            <h1>SOLO MODI</h1>
             <div class="panel">
-                <button class="menu-btn" onclick="createRoom()" id="txt-btn-create">RAUM ERSTELLEN</button>
-                <div style="margin: 15px 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                    <input type="text" id="joinCodeInput" placeholder="CODE..." style="width: 50%;">
-                    <button class="menu-btn" onclick="joinRoom()" id="txt-btn-join">BEITRETEN</button>
-                </div>
-                <button class="menu-btn" onclick="showScreen('screen-main')" style="border:none; color: #64748b;" id="txt-btn-back-lobby">ZURÜCK</button>
+                <button class="menu-btn" onclick="startGameSession('normal')">NORMALER LAUF</button>
+                <button class="menu-btn" onclick="startGameSession('hardcore')">HARDCORE (PRO)</button>
+                <button class="menu-btn" onclick="startGameSession('moon')">MOON (LOW GRAVITY)</button>
+                <button class="menu-btn" onclick="startGameSession('speedrun')">SPEEDRUN (60 SEKUNDEN)</button>
+                <button class="menu-btn" onclick="showScreen('screen-main-menu')" style="border:none; color: var(--text-dim);">ZURÜCK</button>
             </div>
         </div>
 
-        <div id="screen-lobby-room" class="ui-screen hidden">
-            <h1>CODE: <span id="displayCode" style="color:var(--gold)">----</span></h1>
-            <div class="lobby-grid" style="width: 800px; margin-top: 20px;">
-                <div class="panel" style="width: auto;">
-                    <h3 id="txt-players-title">SPIELER</h3>
-                    <div id="playerList"></div>
-                    <button class="menu-btn" onclick="leaveRoom()" style="margin-top:20px; border-color:#ef4444;" id="txt-btn-leave">VERLASSEN</button>
-                </div>
-                <div class="panel" id="hostSettings" style="width: auto;">
-                    <h3 id="txt-host-settings">EINSTELLUNGEN</h3>
-                    <select id="lobbyModeSelect" class="menu-btn" style="background:#0f172a; text-align: center;">
-                        <option value="normal">NORMAL</option>
-                        <option value="hardcore">HARDCORE</option>
-                        <option value="moon">MOON</option>
-                    </select>
-                    <button class="menu-btn" onclick="startLobbyGame()" style="background: var(--accent); border:none;" id="txt-btn-hoststart">START</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="screen-settings" class="ui-screen hidden">
-            <h1 id="txt-settings-title">SETTINGS</h1>
+        <div id="screen-multi-lobby" class="ui-screen hidden">
+            <h2>Globaler Wettkampf</h2>
+            <h1>MULTI LOBBY</h1>
             <div class="panel">
-                <button class="menu-btn" id="partikelToggle" onclick="toggleParticles()">PARTIKEL: AN</button>
-                <p style="margin-top: 20px;">SPRACHE / LANGUAGE</p>
-                <div class="lobby-grid">
-                    <button class="menu-btn" onclick="changeLang('de')">DE</button>
-                    <button class="menu-btn" onclick="changeLang('en')">EN</button>
-                    <button class="menu-btn" onclick="changeLang('pl')">PL</button>
-                    <button class="menu-btn" onclick="changeLang('af')">AF</button>
+                <button class="menu-btn" onclick="createNewMultiRoom()">EIGENE LOBBY HOSTEN</button>
+
+                <div style="margin: 30px 0; background: rgba(0,0,0,0.3); padding: 25px; border-radius: 20px;">
+                    <p style="font-size: 12px; margin-bottom: 10px; letter-spacing: 2px;">BEITRITTS-CODE EINGEBEN</p>
+                    <input type="text" id="joinRoomCode" placeholder="Z.B. X8J2" style="width: 70%;">
+                    <button class="menu-btn" onclick="joinExistingRoom()">JETZT BEITRETEN</button>
                 </div>
-                <button class="menu-btn" onclick="showScreen('screen-main')" style="margin-top: 20px;" id="txt-btn-back-settings">ZURÜCK</button>
+
+                <button class="menu-btn" onclick="showScreen('screen-main-menu')" style="border:none; color: var(--text-dim);">HAUPTMENÜ</button>
             </div>
         </div>
 
-        <div id="screen-modes" class="ui-screen hidden">
-            <h1 id="txt-modes-title">MODI</h1>
-            <div class="panel">
-                <button class="menu-btn" onclick="initGame('normal')">NORMAL</button>
-                <button class="menu-btn" onclick="initGame('hardcore')">HARDCORE</button>
-                <button class="menu-btn" onclick="initGame('moon')">MOON</button>
-                <button class="menu-btn" onclick="initGame('speedrun')">SPEEDRUN</button>
-                <button class="menu-btn" onclick="showScreen('screen-main')" id="txt-btn-back-modes">ZURÜCK</button>
+        <div id="screen-room-view" class="ui-screen hidden">
+            <h2>Lobby Aktiv</h2>
+            <h1>CODE: <span id="code-display" style="color:var(--gold-winner)">----</span></h1>
+
+            <div style="display: flex; gap: 35px; width: 94%; margin-top: 30px; align-items: flex-start;">
+
+                <div class="panel" style="flex: 1; padding: 30px;">
+                    <h3>PILOTEN BEREIT</h3>
+                    <div id="lobby-member-list" style="text-align: left; min-height: 220px; background: rgba(0,0,0,0.4); border-radius: 15px; padding: 20px;"></div>
+                    <button class="menu-btn danger-btn" onclick="leaveCurrentRoom()" style="margin-top: 20px;">LOBBY VERLASSEN</button>
+                </div>
+
+                <div class="panel" id="host-controls" style="flex: 1; padding: 30px;">
+                    <h3>KONFIGURATION (HOST)</h3>
+
+                    <div style="text-align:left; margin-bottom: 15px;">
+                        <label style="font-size: 11px; color: var(--text-dim);">MODUS</label>
+                        <select id="sel-mode">
+                            <option value="normal">NORMAL</option>
+                            <option value="hardcore">HARDCORE</option>
+                            <option value="moon">MOONWALK</option>
+                        </select>
+                    </div>
+
+                    <div style="text-align:left; margin-bottom: 15px;">
+                        <label style="font-size: 11px; color: var(--text-dim);">MUSIK-TRACK</label>
+                        <select id="sel-music">
+                            <option value="1">TRACK 01: NEON DRIVE</option>
+                            <option value="2">TRACK 02: CYBER CHASE</option>
+                            <option value="3">TRACK 03: VAPOR RUN</option>
+                        </select>
+                    </div>
+
+                    <div style="text-align:left; margin-bottom: 25px;">
+                        <label style="font-size: 11px; color: var(--text-dim);">TIMER (SEK.)</label>
+                        <input type="number" id="inp-time" value="60" min="10" max="999">
+                    </div>
+
+                    <button class="menu-btn" onclick="broadcastStartSignal()" style="background: var(--accent-pink); border:none; height: 65px; font-size: 20px;">START SEQUENZ EINLEITEN</button>
+                </div>
+
             </div>
         </div>
 
-        <div id="screen-over" class="ui-screen hidden">
+        <div id="screen-game-over" class="ui-screen hidden">
             <div class="panel">
-                <h1 style="color:var(--accent)">CRASH!</h1>
-                <p style="font-size:24px;">Score: <span id="lastScore">0</span></p>
-                <p style="color:var(--gold); font-size: 18px; margin-bottom: 20px;">Bester Rekord: <span id="bestScoreOver">0</span></p>
-                <button class="menu-btn" onclick="retryGame()" id="txt-btn-retry">NOCHMAL</button>
-                <button class="menu-btn" onclick="showScreen('screen-main')" id="txt-btn-back-over">MENÜ</button>
+                <h2 style="color: var(--danger-red);">Mission gescheitert</h2>
+                <h1 style="font-size: 75px; color: var(--accent-pink);">CRASH!</h1>
+
+                <div style="margin: 40px 0; background: rgba(0,0,0,0.3); padding: 30px; border-radius: 20px;">
+                    <p style="font-size: 35px; margin: 0;">SCORE: <span id="final-score" style="font-weight: 900;">0</span></p>
+                    <p style="font-size: 20px; color: var(--gold-winner); margin-top: 10px;">DEIN REKORD: <span id="final-best">0</span></p>
+                </div>
+
+                <button class="menu-btn" onclick="retryLastGame()" style="height: 70px; font-size: 20px;">NOCHMAL VERSUCHEN</button>
+                <button class="menu-btn" onclick="returnToMenu()">ZURÜCK ZUM HAUPTMENÜ</button>
             </div>
         </div>
+
+        <div id="screen-confirm-reset" class="ui-screen hidden" style="background: rgba(127, 29, 29, 0.98);">
+            <div class="panel" style="border-color: white;">
+                <h1 style="color: white;">ACCOUNT LÖSCHEN?</h1>
+                <p style="margin: 30px 0; font-size: 18px; line-height: 1.6;">Achtung! Wenn du fortfährst, werden dein Name und alle deine Highscores unwiderruflich aus dem System gelöscht. Möchtest du das wirklich?</p>
+
+                <button class="menu-btn" onclick="performAccountDelete()" style="background: white; color: var(--danger-red); border: none;">JA, ALLES LÖSCHEN</button>
+                <button class="menu-btn" onclick="showScreen('screen-main-menu')" style="border-color: white;">NEIN, ABBRECHEN</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // --- SOUNDS ---
-        const jumpSound = new Audio('https://www.soundjay.com/buttons/sounds/button-27.mp3');
-        const deathSound = new Audio('https://www.soundjay.com/buttons/sounds/button-10.mp3');
-        const bgMusic = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'); 
-        bgMusic.loop = true; bgMusic.volume = 0.15; jumpSound.volume = 0.3;
-
-        // --- GLOBALE VARIABLEN ---
+        /* =========================================
+        CORE SYSTEM SETUP
+        ========================================= */
         const socket = io("https://runner-1-gp5g.onrender.com");
-        let remotePlayers = {};
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const bgCanvas = document.getElementById('bg-canvas');
         const bctx = bgCanvas.getContext('2d');
-        canvas.width = 950; canvas.height = 500;
 
-        let userName = "";
-        let currentRoom = null;
-        let particlesEnabled = true;
-        let personalHighscore = parseInt(localStorage.getItem('ultraRunner_highscore')) || 0;
-        let worldScores = []; 
-        let gameState = 'menu', score = 0, speed = 7, obstacles = [], time = 40;
-        let isPressing = false, jumpTimer = 0;
-        const player = { x: 100, y: 300, w: 45, h: 45, dy: 0, grav: 0.85, onGround: false };
+        canvas.width = 1050;
+        canvas.height = 650;
 
-        // --- SPRACHEN SYSTEM ---
-        const translations = {
-            de: { login: "SPIELER LOGIN", start: "STARTEN", mainSub: "HAUPTMENÜ", modes: "MODI", friends: "MIT FREUNDEN SPIELEN", settings: "EINSTELLUNGEN", rename: "NAME ÄNDERN", ranking: "🏆 ONLINE RANKING", create: "RAUM ERSTELLEN", join: "BEITRETEN", back: "ZURÜCK", players: "SPIELER", leave: "VERLASSEN", hostSet: "EINSTELLUNGEN", retry: "NOCHMAL", menu: "MENÜ" },
-            en: { login: "PLAYER LOGIN", start: "START GAME", mainSub: "MAIN MENU", modes: "MODES", friends: "PLAY WITH FRIENDS", settings: "SETTINGS", rename: "CHANGE NAME", ranking: "🏆 ONLINE RANKING", create: "CREATE ROOM", join: "JOIN", back: "BACK", players: "PLAYERS", leave: "LEAVE", hostSet: "HOST SETTINGS", retry: "RETRY", menu: "MENU" },
-            pl: { login: "LOGOWANIE", start: "START", mainSub: "MENU GŁÓWNE", modes: "TRYBY", friends: "GRAJ ZE ZNAJOMYMI", settings: "USTAWIENIA", rename: "ZMIEŃ IMIĘ", ranking: "🏆 RANKING ONLINE", create: "STWÓRZ POKÓJ", join: "DOŁĄCZ", back: "POWRÓT", players: "GRACZE", leave: "OPUŚĆ", hostSet: "USTAWIENIA", retry: "JESZCZE RAZ", menu: "MENU" },
-            af: { login: "SPELER TEKEN IN", start: "BEGIN", mainSub: "HOOFAANBOD", modes: "MODUSSE", friends: "SPEEL MET VRIENDE", settings: "INSTELLINGS", rename: "VERANDER NAAM", ranking: "🏆 RANGORDE", create: "SKEP KAMER", join: "SLUIT AAN", back: "TERUG", players: "SPELERS", leave: "VERLAAT", hostSet: "INSTELLINGS", retry: "WEER", menu: "SPYSKAART" }
+        const sfxJump = new Audio('https://www.soundjay.com/buttons/sounds/button-27.mp3');
+        const sfxHit = new Audio('https://www.soundjay.com/buttons/sounds/button-10.mp3');
+        let bgMusic = new Audio();
+        bgMusic.loop = true;
+        bgMusic.volume = 0.25;
+
+        /* =========================================
+        GLOBAL VARIABLES
+        ========================================= */
+        let activeUser = localStorage.getItem('ultraRunner_name') || "";
+        let highscoreVal = parseInt(localStorage.getItem('ultraRunner_highscore')) || 0;
+
+        let gameState = 'menu';
+        let currentRoomID = null;
+        let isLobbyHost = false;
+
+        let gameScore = 0;
+        let worldSpeed = 8.5;
+        let activeObstacles = [];
+        let timerSeconds = 60;
+        let isJumpPressed = false;
+        let jumpCharge = 0;
+
+        let otherPlayers = {};
+        let globalRankData = [];
+        let currentRankTab = 'global';
+
+        const runner = {
+        x: 160,
+        y: 450,
+        w: 52,
+        h: 52,
+        dy: 0,
+        gravity: 0.92,
+        onGround: false
         };
 
-        function changeLang(lang) {
-            const t = translations[lang];
-            document.getElementById('txt-login-title').innerText = t.login;
-            document.getElementById('txt-login-btn').innerText = t.start;
-            document.getElementById('txt-main-subtitle').innerText = t.mainSub;
-            document.getElementById('txt-btn-modes').innerText = t.modes;
-            document.getElementById('txt-btn-friends').innerText = t.friends;
-            document.getElementById('txt-btn-settings').innerText = t.settings;
-            document.getElementById('txt-btn-rename').innerText = t.rename;
-            document.getElementById('leaderTitle').innerText = t.ranking;
-            document.getElementById('txt-btn-create').innerText = t.create;
-            document.getElementById('txt-btn-join').innerText = t.join;
-            document.getElementById('txt-btn-back-lobby').innerText = t.back;
-            document.getElementById('txt-players-title').innerText = t.players;
-            document.getElementById('txt-btn-leave').innerText = t.leave;
-            document.getElementById('txt-host-settings').innerText = t.hostSet;
-            document.getElementById('txt-btn-hoststart').innerText = t.start;
-            document.getElementById('txt-btn-back-settings').innerText = t.back;
-            document.getElementById('txt-modes-title').innerText = t.modes;
-            document.getElementById('txt-btn-back-modes').innerText = t.back;
-            document.getElementById('txt-btn-retry').innerText = t.retry;
-            document.getElementById('txt-btn-back-over').innerText = t.menu;
+        /* =========================================
+        UI NAVIGATION FUNCTIONS
+        ========================================= */
+        function showScreen(screenId) {
+        const allScreens = document.querySelectorAll('.ui-screen');
+        allScreens.forEach(s => s.classList.add('hidden'));
+
+        if (screenId !== 'none') {
+        const target = document.getElementById(screenId);
+        if (target) target.classList.remove('hidden');
+        }
         }
 
-        function showScreen(id) {
-            document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.getElementById('hud').classList.add('hidden');
-            document.getElementById('global-leaderboard').classList.add('hidden');
-            document.getElementById('home-btn').classList.add('hidden');
-            if(id === 'screen-main') bgMusic.play().catch(()=>{});
+        function processLogin() {
+        const inputField = document.getElementById('userInput');
+        const name = inputField.value.trim();
+
+        if (name.length < 2) {
+        document.getElementById('loginError').innerText = "Dein Name muss mindestens 2 Zeichen lang sein.";
+        return;
         }
 
-        function validateUser() {
-            const val = document.getElementById('nameInput').value.trim();
-            if(val.length < 2) document.getElementById('errorMsg').innerText = "Name zu kurz!";
-            else { userName = val; showScreen('screen-main'); }
+        activeUser = name;
+        localStorage.setItem('ultraRunner_name', name);
+        showScreen('screen-main-menu');
         }
 
-        function exitToMenu() { gameState = 'menu'; showScreen('screen-main'); }
-
-        function createRoom() {
-            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-            currentRoom = code;
-            socket.emit('joinRoom', { room: code, name: userName });
-            document.getElementById('displayCode').innerText = code;
-            document.getElementById('playerList').innerHTML = `<p>${userName} <span style="color:var(--gold)">(HOST)</span></p>`;
-            document.getElementById('hostSettings').classList.remove('hidden');
-            showScreen('screen-lobby-room');
+        function performAccountDelete() {
+        localStorage.clear();
+        window.location.reload();
         }
 
-        function joinRoom() {
-            const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
-            if(code.length !== 4) return alert("Code ungültig!");
-            currentRoom = code;
-            socket.emit('joinRoom', { room: code, name: userName });
-            document.getElementById('displayCode').innerText = code;
-            document.getElementById('playerList').innerHTML = `<p>${userName}</p><p style="font-size:10px; opacity:0.5;">Warte auf Host...</p>`;
-            document.getElementById('hostSettings').classList.add('hidden');
-            showScreen('screen-lobby-room');
+        /* =========================================
+        LEADERBOARD SYSTEM (Rocket League Inspired)
+        ========================================= */
+        function openGlobalRankings() {
+        showScreen('screen-leaderboards');
+        setRankingTab('global');
         }
 
-        function leaveRoom() {
-            socket.emit('leaveRoom', currentRoom);
-            currentRoom = null;
-            showScreen('screen-friends');
+        function setRankingTab(tabType) {
+        currentRankTab = tabType;
+
+        // Buttons stylen
+        document.querySelectorAll('.tab-trigger').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-btn-' + tabType).classList.add('active');
+
+        buildRankingList();
         }
 
-        function startLobbyGame() { 
-            const m = document.getElementById('lobbyModeSelect').value;
-            socket.emit('startRoomGame', { room: currentRoom, mode: m });
-            initGame(m); 
+        function buildRankingList() {
+        const listArea = document.getElementById('ranking-list-content');
+        listArea.innerHTML = "";
+
+        let displayData = [];
+
+        if (currentRankTab === 'global') {
+        // Kopie der Serverdaten sortieren
+        displayData = [...globalRankData].sort((a, b) => b.s - a.s).slice(0, 50);
+        }
+        else if (currentRankTab === 'friends') {
+        // Zeigt Spieler in der aktuellen Lobby oder Online-Nutzer
+        for (let id in otherPlayers) {
+        displayData.push({ n: otherPlayers[id].name, s: "IM MATCH" });
+        }
+        if (displayData.length === 0) {
+        listArea.innerHTML = "<div style='text-align:center; padding-top:100px; opacity:0.4;'>KEINE SPIELER ONLINE</div>";
+        return;
+        }
+        }
+        else if (currentRankTab === 'personal') {
+        displayData = [{ n: activeUser, s: highscoreVal }];
         }
 
-        socket.on('connect', () => {
-            document.getElementById('connection-status').innerText = "Online";
-            document.getElementById('connection-status').style.color = "#22c55e";
+        // HTML Generierung
+        displayData.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = `rank-item ${item.n === activeUser ? 'me-highlight' : ''}`;
+
+        row.innerHTML = `
+        <div class="rank-number">#${index + 1}</div>
+        <div class="rank-name">${item.n}</div>
+        <div class="rank-score">${item.s}</div>
+        `;
+        listArea.appendChild(row);
+        });
+        }
+
+        /* =========================================
+        MULTIPLAYER LOBBY LOGIC
+        ========================================= */
+        function createNewMultiRoom() {
+        const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+        currentRoomID = code;
+        isLobbyHost = true;
+
+        socket.emit('joinRoom', { room: code, name: activeUser });
+
+        document.getElementById('code-display').innerText = code;
+        document.getElementById('host-controls').classList.remove('hidden');
+        showScreen('screen-room-view');
+        }
+
+        function joinExistingRoom() {
+        const codeInput = document.getElementById('joinRoomCode');
+        const code = codeInput.value.trim().toUpperCase();
+
+        if (code.length !== 4) return;
+
+        currentRoomID = code;
+        isLobbyHost = false;
+
+        socket.emit('joinRoom', { room: code, name: activeUser });
+
+        document.getElementById('code-display').innerText = code;
+        document.getElementById('host-controls').classList.add('hidden');
+        showScreen('screen-room-view');
+        }
+
+        function leaveCurrentRoom() {
+        if (currentRoomID) {
+        socket.emit('leaveRoom', currentRoomID);
+        }
+        currentRoomID = null;
+        isLobbyHost = false;
+        showScreen('screen-multi-lobby');
+        }
+
+        /* FIX: Solo-Start & Globaler Start-Countdown */
+        function broadcastStartSignal() {
+        const startSettings = {
+        mode: document.getElementById('sel-mode').value,
+        music: document.getElementById('sel-music').value,
+        time: document.getElementById('inp-time').value
+        };
+
+        // Sendet an den Server, dass der Raum starten soll
+        socket.emit('triggerLobbyStart', {
+        room: currentRoomID,
+        config: startSettings
+        });
+        }
+
+        socket.on('lobbyCountdownStarted', (config) => {
+        let count = 5;
+        const overlay = document.getElementById('countdown-text');
+
+        showScreen('none');
+        overlay.classList.remove('hidden');
+        overlay.innerText = count;
+
+        const timer = setInterval(() => {
+        count--;
+        if (count > 0) {
+        overlay.innerText = count;
+        } else {
+        clearInterval(timer);
+        overlay.classList.add('hidden');
+        startGameSession(config.mode, config);
+        }
+        }, 1000);
         });
 
-        socket.on('roomStarted', (data) => {
-            if(gameState !== 'playing') initGame(data.mode);
+        function returnToMenu() {
+        bgMusic.pause();
+        if (currentRoomID) {
+        showScreen('screen-room-view');
+        } else {
+        showScreen('screen-main-menu');
+        }
+        gameState = 'menu';
+        document.getElementById('hud-display').classList.add('hidden');
+        document.getElementById('home-nav-btn').classList.add('hidden');
+        }
+
+        /* =========================================
+        GAME ENGINE & PHYSICS
+        ========================================= */
+        function startGameSession(modeType, config = null) {
+        gameState = 'playing';
+        gameScore = 0;
+        timerSeconds = config ? parseInt(config.time) : (modeType === 'speedrun' ? 60 : 999);
+        worldSpeed = (modeType === 'hardcore' ? 12.5 : 9.0);
+        activeObstacles = [];
+
+        runner.y = 450;
+        runner.dy = 0;
+        runner.gravity = (modeType === 'moon' ? 0.38 : 0.92);
+
+        // Musik-Management
+        if (config && config.music) {
+        bgMusic.src = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${config.music}.mp3`;
+        bgMusic.play().catch(err => console.log("Audio Error"));
+        }
+
+        // UI Elements einblenden
+        showScreen('none');
+        document.getElementById('hud-display').classList.remove('hidden');
+        document.getElementById('home-nav-btn').classList.remove('hidden');
+
+        if (modeType === 'speedrun' || config) {
+        document.getElementById('hud-timer').classList.remove('hidden');
+        } else {
+        document.getElementById('hud-timer').classList.add('hidden');
+        }
+
+        document.getElementById('val-score').innerText = "0";
+        document.getElementById('val-best').innerText = highscoreVal;
+
+        mainCycle();
+        }
+
+        function mainCycle() {
+        if (gameState !== 'playing') return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Synchronisation mit dem Server
+        socket.emit('playerMove', {
+        x: runner.x,
+        y: runner.y,
+        name: activeUser,
+        room: currentRoomID
+        });
+
+        // Timer-Berechnung
+        if (!document.getElementById('hud-timer').classList.contains('hidden')) {
+        timerSeconds -= 1/60;
+        document.getElementById('val-time').innerText = Math.ceil(timerSeconds);
+        if (timerSeconds <= 0) handleGameOver();
+        }
+
+        // Physik: Sprung und Schwerkraft
+        if (isJumpPressed && jumpCharge > 0) {
+        runner.dy = -14.5;
+        jumpCharge--;
+        }
+
+        runner.dy += runner.gravity;
+        runner.y += runner.dy;
+
+        // Bodenkollision
+        if (runner.y > canvas.height - 100) {
+        runner.y = canvas.height - 100;
+        runner.dy = 0;
+        runner.onGround = true;
+        } else {
+        runner.onGround = false;
+        }
+
+        // Andere Spieler (Ghosts) zeichnen
+        for (let id in otherPlayers) {
+        if (id !== socket.id) {
+        let ghost = otherPlayers[id];
+        ctx.fillStyle = "rgba(236, 72, 153, 0.4)";
+        ctx.fillRect(ghost.x, ghost.y, runner.w, runner.h);
+        ctx.fillStyle = "white";
+        ctx.font = "12px sans-serif";
+        ctx.fillText(ghost.name, ghost.x, ghost.y - 12);
+        }
+        }
+
+        // Aktuellen Spieler zeichnen
+        ctx.fillStyle = "#3b82f6";
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = "#3b82f6";
+        ctx.fillRect(runner.x, runner.y, runner.w, runner.h);
+        ctx.shadowBlur = 0;
+
+        // Bodenstreifen
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+        // Hindernis-Spawner
+        if (Math.random() < 0.022) {
+        if (activeObstacles.length === 0 || (canvas.width - activeObstacles[activeObstacles.length-1].x) > (worldSpeed * 42)) {
+        let obsH = 50 + Math.random() * 105;
+        activeObstacles.push({
+        x: canvas.width,
+        y: canvas.height - 50 - obsH,
+        w: 42,
+        h: obsH
+        });
+        }
+        }
+
+        // Hindernis-Logik & Zeichnen
+        for (let i = activeObstacles.length - 1; i >= 0; i--) {
+        let ob = activeObstacles[i];
+        ob.x -= worldSpeed;
+
+        ctx.fillStyle = "#ef4444";
+        ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+
+        // Kollisionsprüfung
+        if (runner.x < ob.x + ob.w &&
+        runner.x + runner.w > ob.x &&
+        runner.y < ob.y + ob.h &&
+        runner.y + runner.h > ob.y) {
+        handleGameOver();
+        }
+
+        // Punktzahl & Entfernung
+        if (ob.x < -60) {
+        activeObstacles.splice(i, 1);
+        gameScore++;
+        worldSpeed += 0.009;
+        document.getElementById('val-score').innerText = gameScore;
+        }
+        }
+
+        requestAnimationFrame(mainCycle);
+        }
+
+        function handleGameOver() {
+        if (gameState === 'over') return;
+        gameState = 'over';
+        sfxHit.play();
+
+        if (gameScore > highscoreVal) {
+        highscoreVal = gameScore;
+        localStorage.setItem('ultraRunner_highscore', highscoreVal);
+        }
+
+        socket.emit('submitScore', { name: activeUser, score: highscoreVal });
+
+        document.getElementById('final-score').innerText = gameScore;
+        document.getElementById('final-best').innerText = highscoreVal;
+
+        showScreen('screen-game-over');
+        }
+
+        function retryLastGame() {
+        if (currentRoomID && isLobbyHost) {
+        broadcastStartSignal();
+        } else if (!currentRoomID) {
+        startGameSession('normal');
+        } else {
+        alert("Warten auf den Host...");
+        }
+        }
+
+        /* =========================================
+        NETWORK SYNC LISTENERS
+        ========================================= */
+        socket.on('updatePlayers', (serverData) => {
+        otherPlayers = serverData;
+        if (currentRoomID) {
+        let htmlOut = "";
+        for (let sid in serverData) {
+        const pData = serverData[sid];
+        const isOwner = (pData.isHost || (sid === socket.id && isLobbyHost));
+        const ownerBadge = isOwner ? '<span style="color:var(--gold-winner); font-size:10px; border:1px solid; padding:2px 5px; margin-left:10px; border-radius:4px;">OWNER</span>' : '';
+        htmlOut += `<div style="margin: 12px 0; font-weight: 800; font-size: 18px;">• ${pData.name} ${ownerBadge}</div>`;
+        }
+        document.getElementById('lobby-member-list').innerHTML = htmlOut;
+        }
         });
 
         socket.on('updateRankings', (data) => {
-            worldScores = data;
-            updateRankingsUI();
+        globalRankData = data;
+        if (currentRankTab === 'global') buildRankingList();
         });
 
-        socket.on('updatePlayers', (serverPlayers) => { 
-            remotePlayers = serverPlayers; 
-            if(currentRoom) {
-                let list = "";
-                for(let id in serverPlayers) {
-                    list += `<p>${serverPlayers[id].name || 'Spieler'}</p>`;
-                }
-                document.getElementById('playerList').innerHTML = list;
-            }
+        /* =========================================
+        CONTROLS & INPUT
+        ========================================= */
+        window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && runner.onGround && gameState === 'playing') {
+        jumpCharge = 28;
+        isJumpPressed = true;
+        sfxJump.play();
+        }
         });
 
-        function toggleParticles() {
-            particlesEnabled = !particlesEnabled;
-            document.getElementById('partikelToggle').innerText = "PARTIKEL: " + (particlesEnabled ? "AN" : "AUS");
+        window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') isJumpPressed = false;
+        });
+
+        // Touch/Mouse Support
+        window.addEventListener('mousedown', () => {
+        if (runner.onGround && gameState === 'playing') {
+        jumpCharge = 28;
+        isJumpPressed = true;
+        sfxJump.play();
+        }
+        });
+        window.addEventListener('mouseup', () => isJumpPressed = false);
+
+        /* =========================================
+        AMBIENT BACKGROUND
+        ========================================= */
+        let galaxy = [];
+        function populateGalaxy() {
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+        galaxy = [];
+        for (let i = 0; i < 200; i++) {
+        galaxy.push({
+        x: Math.random() * bgCanvas.width,
+        y: Math.random() * bgCanvas.height,
+        z: Math.random() * 2.8,
+        v: Math.random() * 0.6
+        });
+        }
         }
 
-        function initGame(mode) {
-            gameState = 'playing'; score = 0; time = 40;
-            speed = (mode === 'hardcore' ? 10.5 : 7.5);
-            obstacles = []; player.y = 300; player.dy = 0;
-            player.grav = (mode === 'moon' ? 0.35 : 0.85);
+        function loopGalaxy() {
+        bctx.fillStyle = "#020617";
+        bctx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
 
-            document.querySelectorAll('.ui-screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById('hud').classList.remove('hidden');
-            document.getElementById('home-btn').classList.remove('hidden');
-            document.getElementById('global-leaderboard').classList.remove('hidden');
-            document.getElementById('modeNameHUD').innerText = mode.toUpperCase();
-            document.getElementById('timerBox').classList.toggle('hidden', mode !== 'speedrun');
-            
-            document.getElementById('scoreVal').innerText = "0";
-            document.getElementById('bestValHUD').innerText = personalHighscore;
-
-            updateRankingsUI();
-            update();
+        bctx.fillStyle = "#ffffff";
+        galaxy.forEach(star => {
+        star.y += star.v;
+        if (star.y > bgCanvas.height) star.y = 0;
+        bctx.fillRect(star.x, star.y, star.z, star.z);
+        });
+        requestAnimationFrame(loopGalaxy);
         }
 
-        function updateRankingsUI() {
-            const container = document.getElementById('leaderRows');
-            let combined = [...worldScores];
-            if(!combined.find(p => p.n === userName)) {
-                combined.push({n: userName, s: score});
-            }
-            combined.sort((a,b) => b.s - a.s);
-            container.innerHTML = combined.slice(0, 8).map((p, i) => `
-                <div class="rank-entry ${p.n === userName ? 'is-me' : ''}">
-                    <span>#${i+1} ${p.n}</span><span>${p.s}</span>
-                </div>
-            `).join('');
-        }
+        window.addEventListener('resize', populateGalaxy);
+        populateGalaxy();
+        loopGalaxy();
 
-        function update() {
-            if(gameState !== 'playing') return;
-            ctx.clearRect(0,0,canvas.width, canvas.height);
-
-            socket.emit('playerMove', { x: player.x, y: player.y, name: userName, room: currentRoom });
-
-            if(document.getElementById('modeNameHUD').innerText === 'SPEEDRUN') {
-                time -= 1/60;
-                document.getElementById('timeVal').innerText = Math.ceil(time);
-                if(time <= 0) gameOver();
-            }
-
-            if(isPressing && jumpTimer > 0) { 
-                player.dy = -11.5; 
-                jumpTimer--; 
-            }
-            player.dy += player.grav; 
-            player.y += player.dy;
-
-            if(player.y > canvas.height - 85) { 
-                player.y = canvas.height - 85; 
-                player.dy = 0; 
-                player.onGround = true; 
-            } else {
-                player.onGround = false;
-            }
-
-            for(let id in remotePlayers) {
-                if(id !== socket.id) {
-                    let rp = remotePlayers[id];
-                    ctx.fillStyle = "rgba(236, 72, 153, 0.4)";
-                    ctx.fillRect(rp.x, rp.y, player.w, player.h);
-                }
-            }
-
-            ctx.fillStyle = "#3b82f6"; 
-            if(particlesEnabled) { ctx.shadowBlur = 15; ctx.shadowColor = "#3b82f6"; }
-            ctx.fillRect(player.x, player.y, player.w, player.h);
-            ctx.shadowBlur = 0;
-
-            ctx.fillStyle = "#334155"; ctx.fillRect(0, canvas.height-40, canvas.width, 40);
-
-            if(Math.random() < 0.02 && (obstacles.length === 0 || (canvas.width - obstacles[obstacles.length-1].x) > (speed * 42))) {
-                let h = 40 + Math.random()*85;
-                obstacles.push({x: canvas.width, y: canvas.height-40-h, w: 35, h: h});
-            }
-
-            obstacles.forEach((o, i) => {
-                o.x -= speed;
-                ctx.fillStyle = "#ef4444"; ctx.fillRect(o.x, o.y, o.w, o.h);
-                if(player.x < o.x + o.w && player.x + player.w > o.x && player.y < o.y + o.h && player.y + player.h > o.y) gameOver();
-                if(o.x < -40) { 
-                    obstacles.splice(i,1); 
-                    score++; 
-                    speed += 0.01; 
-                    document.getElementById('scoreVal').innerText = score; 
-                    updateRankingsUI(); 
-                }
-            });
-
-            requestAnimationFrame(update);
-        }
-
-        function gameOver() {
-            if(gameState === 'over') return;
-            gameState = 'over'; 
-            deathSound.play();
-
-            if(score > personalHighscore) {
-                personalHighscore = score;
-                localStorage.setItem('ultraRunner_highscore', personalHighscore);
-            }
-
-            socket.emit('submitScore', { name: userName, score: personalHighscore });
-
-            document.getElementById('lastScore').innerText = score;
-            document.getElementById('bestScoreOver').innerText = personalHighscore;
-            document.getElementById('bestValHUD').innerText = personalHighscore;
-            
-            showScreen('screen-over');
-        }
-
-        function retryGame() { initGame(document.getElementById('modeNameHUD').innerText.toLowerCase()); }
-
-        window.onmousedown = () => { 
-            if(player.onGround && gameState === 'playing') { 
-                jumpTimer = 25; 
-                isPressing = true; 
-                jumpSound.play(); 
-            } 
-        };
-        window.onmouseup = () => isPressing = false;
-
-        window.onkeydown = (e) => {
-            if(e.code === 'Space' && player.onGround && gameState === 'playing') { 
-                jumpTimer = 25; 
-                isPressing = true; 
-                jumpSound.play(); 
-            }
-            if(e.code === 'ControlLeft') {
-                player.dy = 22; 
-            }
-        };
-        window.onkeyup = (e) => { if(e.code === 'Space') isPressing = false; };
-
-        let stars = [];
-        function initBg() {
-            bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
-            stars = []; for(let i=0; i<80; i++) stars.push({x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height, s: Math.random()*1.5});
-        }
-        function drawBg() {
-            bctx.fillStyle = "#020617"; bctx.fillRect(0,0,bgCanvas.width, bgCanvas.height);
-            if(particlesEnabled) {
-                bctx.fillStyle = "white";
-                stars.forEach(s => { s.y += s.s * 0.1; if(s.y > bgCanvas.height) s.y = 0; bctx.fillRect(s.x, s.y, s.s, s.s); });
-            }
-            requestAnimationFrame(drawBg);
-        }
-        window.onresize = initBg; initBg(); drawBg();
     </script>
 </body>
 </html>
